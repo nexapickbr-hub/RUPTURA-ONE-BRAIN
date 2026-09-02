@@ -1,1 +1,237 @@
-
+{
+  "name": "RUPTURA ONE — BRAIN v1 — MVP R$0",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Gatilho — Radar a cada 6h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const oportunidades = [\n  {\n    titulo: 'Tecnologia que está mudando uma tarefa comum',\n    relevancia: 'Mudanças tecnológicas em tarefas do dia a dia despertam curiosidade e podem gerar conteúdo educativo.',\n    hook: 'Você ainda faz isso do jeito antigo?',\n    angulo: 'Mostrar a mudança de forma simples e prática.',\n    publico: 'Público geral interessado em tecnologia e praticidade.',\n    potencial_viral: 78,\n    potencial_negocio: 72,\n    riscos: 'Confirmar dados antes da publicação.'\n  },\n  {\n    titulo: 'Um erro simples que faz as pessoas perderem tempo',\n    relevancia: 'Problemas cotidianos têm forte potencial de identificação e compartilhamento.',\n    hook: 'Esse pequeno erro pode estar roubando seu tempo todos os dias.',\n    angulo: 'Apresentar o erro e uma solução prática.',\n    publico: 'Pessoas interessadas em produtividade.',\n    potencial_viral: 84,\n    potencial_negocio: 76,\n    riscos: 'Evitar promessas exageradas.'\n  },\n  {\n    titulo: 'Uma mudança de comportamento que quase ninguém percebeu',\n    relevancia: 'Mudanças de comportamento geram curiosidade e discussão.',\n    hook: 'Você percebeu que as pessoas começaram a fazer isso diferente?',\n    angulo: 'Explicar a mudança através de exemplos cotidianos.',\n    publico: 'Público geral.',\n    potencial_viral: 82,\n    potencial_negocio: 68,\n    riscos: 'Precisará de fontes para comprovar a mudança.'\n  },\n  {\n    titulo: 'A curiosidade por trás de um objeto que usamos todos os dias',\n    relevancia: 'Curiosidades sobre objetos comuns possuem alto potencial de retenção.',\n    hook: 'Você usa isso todos os dias, mas provavelmente nunca percebeu este detalhe.',\n    angulo: 'Revelar uma informação surpreendente e fácil de entender.',\n    publico: 'Público amplo.',\n    potencial_viral: 88,\n    potencial_negocio: 64,\n    riscos: 'Verificar a origem da informação.'\n  },\n  {\n    titulo: 'Uma oportunidade prática para pequenos negócios',\n    relevancia: 'Conteúdo com aplicação comercial pode gerar audiência e monetização.',\n    hook: 'Pequenos negócios podem estar ignorando esta oportunidade.',\n    angulo: 'Transformar uma tendência em uma ação simples para empresas.',\n    publico: 'Empreendedores e pequenos negócios.',\n    potencial_viral: 74,\n    potencial_negocio: 91,\n    riscos: 'Evitar prometer resultados financeiros garantidos.'\n  }\n];\n\nreturn oportunidades.map((o, i) => ({\n  json: {\n    id_oportunidade: `RUP-${Date.now()}-${i + 1}`,\n    ...o,\n    etapa: 'RADAR'\n  }\n}));"
+      },
+      "id": "2",
+      "name": "RADAR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const viral = Number(o.potencial_viral || 0);\n  const negocio = Number(o.potencial_negocio || 0);\n  const curiosidade = viral >= 85 ? 10 : viral >= 75 ? 7 : 5;\n  const compartilhamento = viral >= 80 ? 10 : 7;\n  const retencao = viral >= 80 ? 10 : 7;\n  const score = Math.round((viral * 0.55) + (curiosidade * 2) + (compartilhamento * 2) + (retencao * 2));\n  return {\n    json: {\n      ...o,\n      viral_score: Math.min(100, score),\n      etapa: 'VIRAL SCORE'\n    }\n  };\n});"
+      },
+      "id": "3",
+      "name": "VIRAL SCORE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const viral = Number(o.viral_score || 0);\n  const negocio = Number(o.potencial_negocio || 0);\n  const finalScore = Math.round((viral * 0.65) + (negocio * 0.35));\n  return {\n    json: {\n      ...o,\n      business_score: negocio,\n      final_score: finalScore,\n      prioridade: finalScore >= 85 ? 'ALTA' : finalScore >= 70 ? 'MEDIA' : 'BAIXA',\n      etapa: 'BUSINESS SCORE'\n    }\n  };\n});"
+      },
+      "id": "4",
+      "name": "BUSINESS SCORE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const ordenados = [...items].sort((a, b) => Number(b.json.final_score || 0) - Number(a.json.final_score || 0));\nconst selecionado = ordenados[0];\n\nreturn [{\n  json: {\n    ...selecionado.json,\n    fact_check_status: 'PENDENTE_DE_FONTE',\n    aprovado_para_publicacao: false,\n    checklist_fact_check: [\n      'Confirmar os fatos principais em fontes confiáveis.',\n      'Confirmar datas, números e nomes.',\n      'Separar fatos de opiniões.',\n      'Não publicar enquanto não houver fonte suficiente.'\n    ],\n    observacao: 'MVP R$0: nenhuma fonte externa está conectada neste estágio.',\n    etapa: 'FACT-CHECK'\n  }\n}];"
+      },
+      "id": "5",
+      "name": "FACT-CHECK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const roteiro = [\n    `HOOK: ${o.hook}`,\n    `CONTEXTO: ${o.relevancia}`,\n    `DESENVOLVIMENTO: ${o.angulo}`,\n    `VALOR: Explique o ponto principal de maneira simples e objetiva.`,\n    `CTA: Se isso foi útil, salve e compartilhe.`\n  ].join('\\n\\n');\n\n  return {\n    json: {\n      ...o,\n      roteiro,\n      formato: 'Vídeo curto vertical',\n      duracao_alvo: '25-45 segundos',\n      etapa: 'ROTEIRISTA'\n    }\n  };\n});"
+      },
+      "id": "6",
+      "name": "ROTEIRISTA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const direcao = {\n    abertura: 'Começar com texto grande na tela e corte rápido.',\n    cena_1: 'Apresentar visualmente o problema ou curiosidade.',\n    cena_2: 'Mostrar a explicação principal com elementos visuais simples.',\n    cena_3: 'Destacar a conclusão ou solução.',\n    edicao: 'Cortes rápidos, legendas, zooms discretos e mudança visual a cada poucos segundos.',\n    audio: 'Narração clara e música de fundo discreta.'\n  };\n\n  return {\n    json: {\n      ...o,\n      direcao,\n      etapa: 'DIRETOR'\n    }\n  };\n});"
+      },
+      "id": "7",
+      "name": "DIRETOR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const aprovado = o.aprovado_para_publicacao === true;\n  const roteiro_ok = typeof o.roteiro === 'string' && o.roteiro.length > 50;\n  const diretor_ok = !!o.direcao;\n  const passou = aprovado && roteiro_ok && diretor_ok;\n\n  return {\n    json: {\n      ...o,\n      qa_status: passou ? 'APROVADO' : 'BLOQUEADO',\n      qa_motivos: passou ? [] : [\n        !aprovado ? 'Fact-check ainda não aprovado.' : null,\n        !roteiro_ok ? 'Roteiro incompleto.' : null,\n        !diretor_ok ? 'Direção visual incompleta.' : null\n      ].filter(Boolean),\n      etapa: 'QA'\n    }\n  };\n});"
+      },
+      "id": "8",
+      "name": "QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  return {\n    json: {\n      ...o,\n      growth: {\n        objetivo: 'Testar conteúdo, medir resultado e alimentar o próximo ciclo.',\n        plataformas: ['TikTok', 'Instagram Reels', 'YouTube Shorts'],\n        metricas: ['retenção', 'visualizações', 'compartilhamentos', 'salvamentos', 'comentários', 'conversão'],\n        testes: ['Hook A', 'Hook B', 'CTA A'],\n        regra_mvp: 'Após os primeiros 10 conteúdos, comparar resultados e ajustar os pesos do cérebro.'\n      },\n      etapa: 'GROWTH'\n    }\n  };\n});"
+      },
+      "id": "9",
+      "name": "GROWTH",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Gatilho — Radar a cada 6h": {
+      "main": [
+        [
+          {
+            "node": "RADAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RADAR": {
+      "main": [
+        [
+          {
+            "node": "VIRAL SCORE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VIRAL SCORE": {
+      "main": [
+        [
+          {
+            "node": "BUSINESS SCORE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BUSINESS SCORE": {
+      "main": [
+        [
+          {
+            "node": "FACT-CHECK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FACT-CHECK": {
+      "main": [
+        [
+          {
+            "node": "ROTEIRISTA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROTEIRISTA": {
+      "main": [
+        [
+          {
+            "node": "DIRETOR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DIRETOR": {
+      "main": [
+        [
+          {
+            "node": "QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA": {
+      "main": [
+        [
+          {
+            "node": "GROWTH",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ruptura-one-brain-v1-mvp-r0",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
