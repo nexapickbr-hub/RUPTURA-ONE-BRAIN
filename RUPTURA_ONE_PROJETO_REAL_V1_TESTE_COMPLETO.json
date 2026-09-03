@@ -1,0 +1,131 @@
+{
+  "name": "RUPTURA ONE — PROJETO REAL — V1 TESTE COMPLETO",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "10000000-0000-4000-8000-000000000001",
+      "name": "01 — INÍCIO",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1200, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { projeto: \"RUPTURA ONE\", modo: \"TESTE_REAL\", tema: \"Como usar inteligência artificial para economizar tempo e aumentar produtividade\", publico: \"Brasileiros interessados em IA, produtividade, negócios e renda online\", plataformas: [\"TikTok\", \"Instagram Reels\", \"YouTube Shorts\"], idioma: \"pt-BR\", formato: \"9:16\", duracao_min: 30, duracao_max: 60, objetivo: \"Criar um vídeo curto útil, original e com forte retenção sem promessas enganosas.\", data_execucao: new Date().toISOString() } }];"
+      },
+      "id": "10000000-0000-4000-8000-000000000002",
+      "name": "02 — BRIEF DO CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "COLE_SUA_CHAVE_GEMINI_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ systemInstruction: { parts: [{ text: \"Você é o cérebro editorial do RUPTURA ONE. Crie conteúdo original, útil, verificável e natural. Não invente estatísticas, estudos, preços, depoimentos ou resultados. Não prometa dinheiro garantido. Escreva em português do Brasil. O roteiro deve funcionar sozinho como narração.\" }] }, contents: [{ parts: [{ text: \"Crie UM pacote de conteúdo para vídeo vertical curto.\\n\\nTema: \" + $json.tema + \"\\nPúblico: \" + $json.publico + \"\\nPlataformas: \" + $json.plataformas.join(\", \") + \"\\nObjetivo: \" + $json.objetivo + \"\\nDuração: \" + $json.duracao_min + \" a \" + $json.duracao_max + \" segundos.\\n\\nEstrutura: gancho imediato, desenvolvimento com passos concretos, fechamento e CTA curta. Evite introduções genéricas. Use linguagem falada. Gere 4 a 6 hashtags.\" }] }] }], generationConfig: { maxOutputTokens: 3000, responseMimeType: \"application/json\", responseSchema: { type: \"object\", properties: { titulo: {type: \"string\"}, gancho: {type: \"string\"}, roteiro: {type: \"string\"}, legenda: {type: \"string\"}, cta: {type: \"string\"}, hashtags: {type: \"array\", items: {type: \"string\"}}, ideia_visual: {type: \"string\"}, texto_tela: {type: \"string\"}, cenas: {type: \"array\", items: {type: \"object\", properties: {cena: {type: \"integer\"}, duracao_segundos: {type: \"integer\"}, visual: {type: \"string\"}, narracao: {type: \"string\"}, texto_tela: {type: \"string\"}}, required: [\"cena\", \"duracao_segundos\", \"visual\", \"narracao\", \"texto_tela\"]}}, duracao_segundos: {type: \"integer\"}}, required: [\"titulo\", \"gancho\", \"roteiro\", \"legenda\", \"cta\", \"hashtags\", \"ideia_visual\", \"texto_tela\", \"cenas\", \"duracao_segundos\"] } } }) }}"
+      },
+      "id": "10000000-0000-4000-8000-000000000003",
+      "name": "03 — GEMINI — CÉREBRO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-720, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json; if (r.error) throw new Error(\"Gemini API: \" + (r.error.message || JSON.stringify(r.error))); const candidate = r.candidates?.[0]; if (!candidate) throw new Error(\"Gemini não retornou candidates. Resposta: \" + JSON.stringify(r).slice(0,2500)); if (candidate.finishReason && candidate.finishReason !== \"STOP\") throw new Error(\"Gemini encerrou a geração com finishReason=\" + candidate.finishReason); const text = (candidate.content?.parts || []).filter(p => typeof p.text === \"string\").map(p => p.text).join(\"\").trim(); if (!text) throw new Error(\"Gemini não retornou texto.\"); let clean = text.replace(/^```json\\s*/i, \"\").replace(/^```\\s*/i, \"\").replace(/\\s*```$/i, \"\").trim(); const a = clean.indexOf(\"{\"); const b = clean.lastIndexOf(\"}\"); if (a >= 0 && b > a) clean = clean.slice(a,b+1); let data; try { data = JSON.parse(clean); } catch(e) { throw new Error(\"JSON inválido retornado pelo Gemini: \" + clean.slice(0,2500)); } return [{json: {...data, ia: \"Google Gemini\", modelo: r.modelVersion || \"gemini-3.7-flash\", response_id: r.responseId || null, gerado_em: new Date().toISOString()}}];"
+      },
+      "id": "10000000-0000-4000-8000-000000000004",
+      "name": "04 — INTERPRETAR IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-480, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json; const req = [\"titulo\",\"gancho\",\"roteiro\",\"legenda\",\"cta\",\"hashtags\",\"ideia_visual\",\"texto_tela\",\"cenas\",\"duracao_segundos\"]; const missing = req.filter(k => d[k] === undefined || d[k] === null || (typeof d[k] === \"string\" && !d[k].trim())); if (missing.length) throw new Error(\"QA REPROVADO — faltando: \" + missing.join(\", \")); if (!Array.isArray(d.hashtags) || d.hashtags.length < 4 || d.hashtags.length > 6) throw new Error(\"QA REPROVADO — hashtags deve ter 4 a 6 itens.\"); if (!Array.isArray(d.cenas) || d.cenas.length < 3) throw new Error(\"QA REPROVADO — mínimo de 3 cenas.\"); if (!Number.isInteger(d.duracao_segundos) || d.duracao_segundos < 30 || d.duracao_segundos > 60) throw new Error(\"QA REPROVADO — duração deve ficar entre 30 e 60 segundos.\"); if (d.gancho.length < 20) throw new Error(\"QA REPROVADO — gancho muito curto.\"); if (d.roteiro.length < 250) throw new Error(\"QA REPROVADO — roteiro muito curto.\"); const soma = d.cenas.reduce((s,c) => s + (Number(c.duracao_segundos) || 0),0); if (soma < 25 || soma > 70) throw new Error(\"QA REPROVADO — duração das cenas incoerente: \" + soma + \"s.\"); return [{json: {...d, qa: {aprovado:true,status:\"APROVADO\",pronto_para_producao:true,duracao_cenas:soma,verificacoes:[\"estrutura\",\"campos\",\"hashtags\",\"duracao\",\"gancho\",\"roteiro\",\"cenas\"]}}}];"
+      },
+      "id": "10000000-0000-4000-8000-000000000005",
+      "name": "05 — QA EDITORIAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json; const cenas = d.cenas.map(c => ({cena:c.cena,duracao_segundos:c.duracao_segundos,visual:c.visual,narracao:c.narracao,texto_tela:c.texto_tela})); return [{json: {projeto:\"RUPTURA ONE\",status:\"PACOTE_DE_PRODUCAO_PRONTO\",titulo:d.titulo,roteiro_narracao:d.roteiro,cenas,especificacao_video:{formato:\"9:16\",resolucao_recomendada:\"1080x1920\",duracao_segundos:d.duracao_segundos,legendas:true,texto_na_tela:true},legenda_publicacao:d.legenda,cta:d.cta,hashtags:d.hashtags,ideia_visual:d.ideia_visual,texto_tela_geral:d.texto_tela,ia:d.ia,modelo:d.modelo,qa:d.qa,gerado_em:d.gerado_em}}];"
+      },
+      "id": "10000000-0000-4000-8000-000000000006",
+      "name": "06 — STORYBOARD + PRODUÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json; const publicacao = {status:\"AGUARDANDO_VIDEO\",plataformas:[\"TikTok\",\"Instagram Reels\",\"YouTube Shorts\"],titulo:d.titulo,legenda:d.legenda_publicacao,cta:d.cta,hashtags:d.hashtags,formato:\"9:16\",resolucao:\"1080x1920\",arquivo_video:null,observacao:\"O vídeo precisa ser renderizado antes do envio. Este pacote não inventa arquivo ou URL.\"}; return [{json:{...d,publicacao}}];"
+      },
+      "id": "10000000-0000-4000-8000-000000000007",
+      "name": "07 — FILA DE PUBLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json; return [{json:{projeto:d.projeto,resultado:\"TESTE_REAL_CONCLUIDO\",pronto_para_producao:d.qa?.pronto_para_producao === true,titulo:d.titulo,gancho:d.cenas?.[0]?.narracao || d.titulo,roteiro_narracao:d.roteiro_narracao,storyboard:d.cenas,legenda:d.legenda_publicacao,cta:d.cta,hashtags:d.hashtags,especificacao_video:d.especificacao_video,publicacao:d.publicacao,modelo_ia:d.modelo,gerado_em:d.gerado_em}}];"
+      },
+      "id": "10000000-0000-4000-8000-000000000008",
+      "name": "08 — RESULTADO FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01 — INÍCIO": {
+      "main": [[{"node": "02 — BRIEF DO CONTEÚDO", "type": "main", "index": 0}]]
+    },
+    "02 — BRIEF DO CONTEÚDO": {
+      "main": [[{"node": "03 — GEMINI — CÉREBRO", "type": "main", "index": 0}]]
+    },
+    "03 — GEMINI — CÉREBRO": {
+      "main": [[{"node": "04 — INTERPRETAR IA", "type": "main", "index": 0}]]
+    },
+    "04 — INTERPRETAR IA": {
+      "main": [[{"node": "05 — QA EDITORIAL", "type": "main", "index": 0}]]
+    },
+    "05 — QA EDITORIAL": {
+      "main": [[{"node": "06 — STORYBOARD + PRODUÇÃO", "type": "main", "index": 0}]]
+    },
+    "06 — STORYBOARD + PRODUÇÃO": {
+      "main": [[{"node": "07 — FILA DE PUBLICAÇÃO", "type": "main", "index": 0}]]
+    },
+    "07 — FILA DE PUBLICAÇÃO": {
+      "main": [[{"node": "08 — RESULTADO FINAL", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "tags": []
+}
