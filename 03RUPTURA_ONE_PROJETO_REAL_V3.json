@@ -1,0 +1,800 @@
+{
+  "name": "RUPTURA ONE — PROJETO REAL — V3 SEM SINTAXE INVÁLIDA",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "n1",
+      "name": "01 — INÍCIO",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1500, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = {\n  modo: 'TESTE',\n  executar_render: false,\n  executar_tiktok: false,\n  executar_instagram: false,\n  executar_youtube: false,\n  gemini_api_key: 'COLE_NOVA_CHAVE_GEMINI_AQUI',\n  shotstack_api_key: 'COLE_CHAVE_SHOTSTACK_AQUI',\n  tiktok_access_token: 'COLE_TOKEN_TIKTOK_AQUI',\n  instagram_access_token: 'COLE_TOKEN_META_AQUI',\n  instagram_user_id: 'COLE_IG_USER_ID_AQUI',\n  youtube_oauth: 'CONFIGURAR_CREDENCIAL_OAUTH2_NO_N8N',\n  tema: 'Como usar inteligência artificial para economizar tempo e aumentar produtividade',\n  publico: 'Brasileiros interessados em inteligência artificial, produtividade e negócios',\n  idioma: 'pt-BR',\n  plataformas: ['TikTok','Instagram Reels','YouTube Shorts'],\n  duracao_min: 30,\n  duracao_max: 60\n};\nreturn [{json:{projeto:'RUPTURA ONE', config, iniciado_em:new Date().toISOString()}}];"
+      },
+      "id": "n2",
+      "name": "02 — CONFIGURAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1320, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const {config} = $json;\nreturn [{json:{\n  projeto:'RUPTURA ONE',\n  config,\n  brief:{\n    tema:config.tema,\n    publico:config.publico,\n    idioma:config.idioma,\n    plataformas:config.plataformas,\n    objetivo:'Gerar um vídeo curto útil, original, verificável e adequado às plataformas, sem promessas enganosas.',\n    duracao_min:config.duracao_min,\n    duracao_max:config.duracao_max,\n    tom:'direto, natural, didático e envolvente'\n  }\n}}];"
+      },
+      "id": "n3",
+      "name": "03 — BRIEF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1140, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const {config, brief} = $json;\nconst schema = {\n  type:'object',\n  properties:{\n    titulo:{type:'string'},\n    gancho:{type:'string'},\n    roteiro:{type:'string'},\n    legenda:{type:'string'},\n    cta:{type:'string'},\n    hashtags:{type:'array',items:{type:'string'}},\n    ideia_visual:{type:'string'},\n    texto_tela:{type:'string'},\n    duracao_segundos:{type:'integer'},\n    cenas:{type:'array',items:{type:'object',properties:{\n      cena:{type:'integer'},\n      duracao_segundos:{type:'integer'},\n      visual:{type:'string'},\n      narracao:{type:'string'},\n      texto_tela:{type:'string'}\n    },required:['cena','duracao_segundos','visual','narracao','texto_tela']}}\n  },\n  required:['titulo','gancho','roteiro','legenda','cta','hashtags','ideia_visual','texto_tela','duracao_segundos','cenas']\n};\nconst prompt = [\n'Você é o cérebro editorial do RUPTURA ONE.',\n'Crie conteúdo original e útil. Não invente estatísticas, estudos, fontes, preços, depoimentos ou resultados.',\n'Não prometa dinheiro garantido. Não faça alegações médicas, financeiras ou jurídicas sem base.',\n'Escreva em português do Brasil, em linguagem falada.',\n'Crie UM pacote para vídeo vertical curto.',\n'Retorne SOMENTE JSON conforme o schema.',\n'BRIEF:',\nJSON.stringify(brief)\n].join('\\n');\nconst geminiBody = {\n  systemInstruction:{parts:[{text:'Você é um editor-chefe rigoroso para vídeos curtos. Priorize clareza, retenção, utilidade e conformidade.'}]},\n  contents:[{role:'user',parts:[{text:prompt}]}],\n  generationConfig:{\n    thinkingConfig:{thinkingLevel:'low'},\n    responseMimeType:'application/json',\n    responseSchema:schema,\n    maxOutputTokens:3000\n  }\n};\nreturn [{json:{projeto:'RUPTURA ONE',config,brief,geminiBody}}];"
+      },
+      "id": "n4",
+      "name": "04 — PREPARAR GEMINI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $json.config.gemini_api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.geminiBody) }}",
+        "options": {}
+      },
+      "id": "n5",
+      "name": "05 — GEMINI — CÉREBRO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-780, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json;\nif(r.error) throw new Error('Gemini API: '+(r.error.message||JSON.stringify(r.error)));\nconst c=r.candidates?.[0];\nif(!c) throw new Error('Gemini não retornou candidates.');\nconst reason=c.finishReason;\nif(reason && reason!=='STOP') throw new Error('Gemini terminou com finishReason='+reason);\nconst text=(c.content?.parts||[]).map(p=>p.text||'').join('').trim();\nif(!text) throw new Error('Gemini não retornou conteúdo.');\nlet clean=text.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/\\s*```$/i,'').trim();\nconst a=clean.indexOf('{'), b=clean.lastIndexOf('}');\nif(a<0||b<=a) throw new Error('Gemini não retornou JSON válido.');\nlet data;\ntry{data=JSON.parse(clean.slice(a,b+1));}catch(e){throw new Error('JSON inválido do Gemini: '+clean.slice(0,1000));}\nreturn [{json:data}];"
+      },
+      "id": "n6",
+      "name": "06 — INTERPRETAR GEMINI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-600, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nconst required=['titulo','gancho','roteiro','legenda','cta','hashtags','ideia_visual','texto_tela','duracao_segundos','cenas'];\nconst missing=required.filter(k=>d[k]===undefined||d[k]===null);\nif(missing.length) throw new Error('QA REPROVADO — faltando: '+missing.join(', '));\nif(!Array.isArray(d.hashtags)||d.hashtags.length<4||d.hashtags.length>6) throw new Error('QA REPROVADO — hashtags deve ter 4 a 6 itens.');\nif(!Array.isArray(d.cenas)||d.cenas.length<3||d.cenas.length>8) throw new Error('QA REPROVADO — cenas deve ter 3 a 8 itens.');\nif(!Number.isInteger(d.duracao_segundos)||d.duracao_segundos<30||d.duracao_segundos>60) throw new Error('QA REPROVADO — duração deve ser 30–60s.');\nif(d.gancho.length<15) throw new Error('QA REPROVADO — gancho muito curto.');\nif(d.roteiro.length<200) throw new Error('QA REPROVADO — roteiro muito curto.');\nconst soma=d.cenas.reduce((s,c)=>s+(Number(c.duracao_segundos)||0),0);\nif(soma<25||soma>70) throw new Error('QA REPROVADO — soma das cenas incoerente: '+soma+'s.');\nreturn [{json:{...d,qa:{aprovado:true,duracao_cenas:soma,verificacoes:['campos','estrutura','hashtags','duracao','gancho','roteiro','cenas']}}}];"
+      },
+      "id": "n7",
+      "name": "07 — QA EDITORIAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-420, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nlet t=0;\nconst clips=d.cenas.map((c)=>{\n  const length=Math.max(1,Number(c.duracao_segundos)||5);\n  const text=String(c.texto_tela||c.narracao||'').slice(0,240);\n  const clip={asset:{type:'rich-text',text,font:{family:'Montserrat SemiBold',size:64},align:{horizontal:'center',vertical:'middle'},color:'#ffffff'},start:t,length};\n  t+=length;\n  return clip;\n});\nconst edit={\n  timeline:{background:'#111111',tracks:[{clips}]},\n  output:{format:'mp4',resolution:'hd',aspectRatio:'9:16',fps:30}\n};\nreturn [{json:{...d,shotstack_edit:edit,producao:{formato:'9:16',resolucao:'HD vertical',duracao_segundos:t,renderizador:'Shotstack',observacao:'Render de teste com texto; para produção editorial final, usar apenas mídia licenciada ou própria.'}}}];"
+      },
+      "id": "n8",
+      "name": "08 — MONTAR VÍDEO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.config.executar_render }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "n9",
+      "name": "09 — RENDER ATIVADO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/edit/stage/render",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $json.config.shotstack_api_key }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.shotstack_edit) }}",
+        "options": {}
+      },
+      "id": "n10",
+      "name": "10 — SHOTSTACK — INICIAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, -180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json;\nif(r.error) throw new Error('Shotstack API: '+(r.error.message||JSON.stringify(r.error)));\nconst id=r.response?.id;\nif(!id) throw new Error('Shotstack não retornou response.id.');\nconst base=$('08 — MONTAR VÍDEO').first().json;\nreturn [{json:{render_id:id,tentativas:0,config:base.config,conteudo:base}}];"
+      },
+      "id": "n11",
+      "name": "11 — SALVAR RENDER ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, -180]
+    },
+    {
+      "parameters": {
+        "amount": 8,
+        "unit": "seconds"
+      },
+      "id": "n12",
+      "name": "12 — ESPERAR 8s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [660, -180]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.shotstack.io/edit/stage/render/' + $json.render_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $json.config.shotstack_api_key }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n13",
+      "name": "13 — CONSULTAR RENDER",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, -180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.response?.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "n14",
+      "name": "14 — RENDER CONCLUÍDO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1100, -180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.response?.status }}",
+              "rightValue": "failed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "n15",
+      "name": "15 — RENDER FALHOU?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1320, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const previous=$('11 — SALVAR RENDER ID').first().json;\nconst attempt=(previous.tentativas||0)+1;\nif(attempt>30) throw new Error('Timeout lógico: render não concluiu após 30 verificações.');\nreturn [{json:{...previous,tentativas:attempt}}];"
+      },
+      "id": "n16",
+      "name": "16 — CONTROLE DE TENTATIVAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base=$('11 — SALVAR RENDER ID').first().json.conteudo;\nconst r=$input.first().json;\nconst url=r.response?.url||null;\nif(!url) throw new Error('Shotstack marcou done, mas não retornou response.url.');\nreturn [{json:{...base,video_url:url,render_id:r.response.id,render_status:'done',resultado:'VIDEO_MP4_RENDERIZADO',publicacao:{status:'AGUARDANDO_PUBLICACAO',video_url:url}}}];"
+      },
+      "id": "n17",
+      "name": "17 — VÍDEO PRONTO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, -250]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json; throw new Error('Shotstack falhou: '+(r.response?.error||r.message||'erro de render'));"
+      },
+      "id": "n18",
+      "name": "18 — ERRO DE RENDER",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nreturn [{json:{...d,resultado:'CONTEUDO_E_STORYBOARD_PRONTOS',video_url:null,publicacao:{status:'AGUARDANDO_VIDEO',motivo:'Render desativado na configuração.'}}}];"
+      },
+      "id": "n19",
+      "name": "19 — RESULTADO SEM VÍDEO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 220]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.config.executar_tiktok || $json.config.executar_instagram || $json.config.executar_youtube }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "n20",
+      "name": "20 — PUBLICAÇÃO ATIVADA?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [520, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json; const c=d.config;\nif(!d.video_url) throw new Error('TikTok: vídeo não existe.');\nreturn [{json:{plataforma:'TikTok',projeto:d.projeto||'RUPTURA ONE',video_url:d.video_url,request:{method:'POST',url:'https://open.tiktokapis.com/v2/post/publish/video/init/',headers:{Authorization:'Bearer '+c.tiktok_access_token,'Content-Type':'application/json; charset=UTF-8'},body:{post_info:{title:[d.legenda,...d.hashtags].join(' ').slice(0,2200),privacy_level:'SELF_ONLY',disable_duet:false,disable_comment:false,disable_stitch:false,is_aigc:true},source_info:{source:'PULL_FROM_URL',video_url:d.video_url}}},observacao:'Para PULL_FROM_URL, o domínio/prefixo da URL do vídeo precisa estar verificado no TikTok. Cliente não auditado publica apenas em modo privado.'}}];"
+      },
+      "id": "n21",
+      "name": "21 — TIKTOK — DIRECT POST",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, -50]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json; const c=d.config;\nif(!d.video_url) throw new Error('Instagram: vídeo não existe.');\nreturn [{json:{plataforma:'Instagram Reels',video_url:d.video_url,request:{create_container:{method:'POST',url:'https://graph.facebook.com/v24.0/'+c.instagram_user_id+'/media',body:{media_type:'REELS',video_url:d.video_url,caption:[d.legenda,...d.hashtags].join(' '),share_to_feed:true}},publish_after_ready:{method:'POST',url:'https://graph.facebook.com/v24.0/'+c.instagram_user_id+'/media_publish',body:{creation_id:'USAR_ID_DO_CONTAINER'}}},observacao:'O container deve ser criado, ter status pronto e só então ser publicado. Requer credenciais/permissões Meta adequadas.'}}];"
+      },
+      "id": "n22",
+      "name": "22 — INSTAGRAM — REELS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nif(!d.video_url) throw new Error('YouTube: vídeo não existe.');\nreturn [{json:{plataforma:'YouTube Shorts',video_url:d.video_url,youtube:{metadata:{title:d.titulo,description:[d.legenda,d.cta,...d.hashtags].join('\\n'),privacyStatus:'private'},auth:'OAuth 2.0 com escopo youtube.upload',upload:'Usar videos.insert multipart/resumable ou nó YouTube do n8n com credencial OAuth2.'},observacao:'Projetos OAuth não devem armazenar senha/token fixo no workflow.'}}];"
+      },
+      "id": "n23",
+      "name": "23 — YOUTUBE — UPLOAD",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 210]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nreturn [{json:{projeto:'RUPTURA ONE',resultado:d.resultado||'PRONTO',titulo:d.titulo,gancho:d.gancho,roteiro:d.roteiro,legenda:d.legenda,cta:d.cta,hashtags:d.hashtags,cenas:d.cenas,duracao_segundos:d.duracao_segundos,video_url:d.video_url||null,qa:d.qa,producao:d.producao,publicacao:d.publicacao||null,gerado_em:new Date().toISOString()}}];"
+      },
+      "id": "n24",
+      "name": "24 — RESULTADO FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.config.executar_tiktok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "n25",
+      "name": "25 — TIKTOK ATIVADO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, -100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.config.executar_instagram }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "n26",
+      "name": "26 — INSTAGRAM ATIVADO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 80]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.config.executar_youtube }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "n27",
+      "name": "27 — YOUTUBE ATIVADO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 260]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01 — INÍCIO": {
+      "main": [
+        [
+          {
+            "node": "02 — CONFIGURAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 — CONFIGURAÇÃO": {
+      "main": [
+        [
+          {
+            "node": "03 — BRIEF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 — BRIEF": {
+      "main": [
+        [
+          {
+            "node": "04 — PREPARAR GEMINI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 — PREPARAR GEMINI": {
+      "main": [
+        [
+          {
+            "node": "05 — GEMINI — CÉREBRO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 — GEMINI — CÉREBRO": {
+      "main": [
+        [
+          {
+            "node": "06 — INTERPRETAR GEMINI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 — INTERPRETAR GEMINI": {
+      "main": [
+        [
+          {
+            "node": "07 — QA EDITORIAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 — QA EDITORIAL": {
+      "main": [
+        [
+          {
+            "node": "08 — MONTAR VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 — MONTAR VÍDEO": {
+      "main": [
+        [
+          {
+            "node": "09 — RENDER ATIVADO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 — RENDER ATIVADO?": {
+      "main": [
+        [
+          {
+            "node": "10 — SHOTSTACK — INICIAR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "19 — RESULTADO SEM VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 — SHOTSTACK — INICIAR": {
+      "main": [
+        [
+          {
+            "node": "11 — SALVAR RENDER ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 — SALVAR RENDER ID": {
+      "main": [
+        [
+          {
+            "node": "12 — ESPERAR 8s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 — ESPERAR 8s": {
+      "main": [
+        [
+          {
+            "node": "13 — CONSULTAR RENDER",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 — CONSULTAR RENDER": {
+      "main": [
+        [
+          {
+            "node": "14 — RENDER CONCLUÍDO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 — RENDER CONCLUÍDO?": {
+      "main": [
+        [
+          {
+            "node": "17 — VÍDEO PRONTO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "15 — RENDER FALHOU?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 — RENDER FALHOU?": {
+      "main": [
+        [
+          {
+            "node": "18 — ERRO DE RENDER",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "16 — CONTROLE DE TENTATIVAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 — CONTROLE DE TENTATIVAS": {
+      "main": [
+        [
+          {
+            "node": "12 — ESPERAR 8s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17 — VÍDEO PRONTO": {
+      "main": [
+        [
+          {
+            "node": "20 — PUBLICAÇÃO ATIVADA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18 — ERRO DE RENDER": {
+      "main": [
+        [
+          {
+            "node": "24 — RESULTADO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "19 — RESULTADO SEM VÍDEO": {
+      "main": [
+        [
+          {
+            "node": "20 — PUBLICAÇÃO ATIVADA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "20 — PUBLICAÇÃO ATIVADA?": {
+      "main": [
+        [
+          {
+            "node": "25 — TIKTOK ATIVADO?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "24 — RESULTADO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "21 — TIKTOK — DIRECT POST": {
+      "main": [
+        [
+          {
+            "node": "26 — INSTAGRAM ATIVADO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22 — INSTAGRAM — REELS": {
+      "main": [
+        [
+          {
+            "node": "27 — YOUTUBE ATIVADO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "23 — YOUTUBE — UPLOAD": {
+      "main": [
+        [
+          {
+            "node": "24 — RESULTADO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "25 — TIKTOK ATIVADO?": {
+      "main": [
+        [
+          {
+            "node": "21 — TIKTOK — DIRECT POST",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "26 — INSTAGRAM ATIVADO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "26 — INSTAGRAM ATIVADO?": {
+      "main": [
+        [
+          {
+            "node": "22 — INSTAGRAM — REELS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "27 — YOUTUBE ATIVADO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "27 — YOUTUBE ATIVADO?": {
+      "main": [
+        [
+          {
+            "node": "23 — YOUTUBE — UPLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "24 — RESULTADO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
