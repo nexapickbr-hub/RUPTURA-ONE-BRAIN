@@ -1,0 +1,167 @@
+{
+  "name": "RUPTURA ONE — PRODUÇÃO + PUBLICAÇÃO v1",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({ json: item.json }));"
+      },
+      "id": "entrada-crescimento",
+      "name": "ENTRADA — CRESCIMENTO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json;\nconst titulo=d.titulo||'Conteúdo RUPTURA ONE';\nconst gancho=d.gancho||`Você sabia que ${titulo.toLowerCase()}?`;\nconst publico=d.publico||'público interessado no tema';\nconst angulo=d.angulo||'solução prática';\nreturn [{json:{...d,agente:'GERADOR DE CONTEÚDO',conteudo:{titulo,gancho,desenvolvimento:`Apresente o problema com clareza, explique o ponto principal e entregue uma solução prática. Ângulo: ${angulo}.`,publico,cta:'Siga para mais conteúdos e confira a próxima dica.'},status:'gerado'}}];"
+      },
+      "id": "gerador-conteudo",
+      "name": "GERADOR DE CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json,c=d.conteudo||{};\nconst roteiro=[c.gancho,c.desenvolvimento,c.cta].filter(Boolean).join('\\n\\n');\nreturn [{json:{...d,roteiro_final:roteiro,duracao_alvo_segundos:35,formato:'video_vertical_9x16',status:'roteiro_pronto'}}];"
+      },
+      "id": "roteiro-final",
+      "name": "ROTEIRO FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json,erros=[];\nif(!(d.roteiro_final||'').trim()) erros.push('Roteiro vazio');\nif((d.roteiro_final||'').length<40) erros.push('Roteiro muito curto');\nif(!d.titulo) erros.push('Título ausente');\nif(!d.conteudo?.cta) erros.push('CTA ausente');\nreturn [{json:{...d,qa:{aprovado:erros.length===0,erros},status:erros.length===0?'aprovado':'reprovado'}}];"
+      },
+      "id": "qa-conteudo",
+      "name": "QA — CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [780, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json;\nreturn [{json:{...d,publicacao:{plataforma:'TikTok',formato:'9:16',legenda:`${d.titulo||''}\\n\\n${d.conteudo?.cta||''}`.trim(),roteiro:d.roteiro_final||'',status:'fila'}}}];"
+      },
+      "id": "pacote-publicacao",
+      "name": "PACOTE DE PUBLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "Bearer COLOQUE_O_ACCESS_TOKEN_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "jsonParameters": true,
+        "bodyParametersJson": "={\"post_info\":{\"title\":$json.publicacao?.legenda || \"RUPTURA ONE\"},\"source_info\":{\"source\":\"FILE_UPLOAD\",\"video_size\":0,\"chunk_size\":0,\"total_chunk_count\":1}}"
+      },
+      "id": "tiktok-sandbox",
+      "name": "TIKTOK — SANDBOX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [1300, 0],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json;\nreturn [{json:{...d,registro:{plataforma:'TikTok',etapa:'publicacao',timestamp:new Date().toISOString(),resultado:'aguardando_integracao_tiktok'}}}];"
+      },
+      "id": "registro-publicacao",
+      "name": "REGISTRO — PUBLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 0]
+    }
+  ],
+  "connections": {
+    "ENTRADA — CRESCIMENTO": {
+      "main": [
+        [
+          {
+            "node": "GERADOR DE CONTEÚDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GERADOR DE CONTEÚDO": {
+      "main": [
+        [
+          {
+            "node": "ROTEIRO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROTEIRO FINAL": {
+      "main": [
+        [
+          {
+            "node": "QA — CONTEÚDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA — CONTEÚDO": {
+      "main": [
+        [
+          {
+            "node": "PACOTE DE PUBLICAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PACOTE DE PUBLICAÇÃO": {
+      "main": [
+        [
+          {
+            "node": "TIKTOK — SANDBOX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TIKTOK — SANDBOX": {
+      "main": [
+        [
+          {
+            "node": "REGISTRO — PUBLICAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
