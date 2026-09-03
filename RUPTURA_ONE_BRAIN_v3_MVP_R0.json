@@ -1,0 +1,244 @@
+{
+  "name": "RUPTURA ONE — BRAIN v3 — MVP R$0",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "v3-trigger",
+      "name": "GATILHO — RADAR A CADA 6H",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const oportunidades = [{titulo:'Tecnologia que está mudando uma tarefa comum',relevancia:'Mudanças tecnológicas em tarefas do dia a dia despertam curiosidade e podem gerar conteúdo educativo.',hook:'Você ainda faz isso do jeito antigo?',angulo:'Mostrar a mudança de forma simples e prática.',publico:'Público geral interessado em tecnologia e praticidade.',potencial_viral:78,potencial_negocio:72,riscos:'Confirmar dados antes da publicação.'},{titulo:'Um erro simples que faz as pessoas perderem tempo',relevancia:'Problemas cotidianos têm forte potencial de identificação e compartilhamento.',hook:'Esse pequeno erro pode estar roubando seu tempo todos os dias.',angulo:'Apresentar o erro e uma solução prática.',publico:'Pessoas interessadas em produtividade.',potencial_viral:84,potencial_negocio:76,riscos:'Evitar promessas exageradas.'},{titulo:'Uma mudança de comportamento que quase ninguém percebeu',relevancia:'Mudanças de comportamento geram curiosidade e discussão.',hook:'Você percebeu que as pessoas começaram a fazer isso diferente?',angulo:'Explicar a mudança através de exemplos cotidianos.',publico:'Público geral.',potencial_viral:82,potencial_negocio:68,riscos:'Precisará de fontes para comprovar a mudança.'},{titulo:'A curiosidade por trás de um objeto que usamos todos os dias',relevancia:'Curiosidades sobre objetos comuns possuem alto potencial de retenção.',hook:'Você usa isso todos os dias, mas provavelmente nunca percebeu este detalhe.',angulo:'Revelar uma informação surpreendente e fácil de entender.',publico:'Público amplo.',potencial_viral:88,potencial_negocio:64,riscos:'Verificar a origem da informação.'},{titulo:'Uma oportunidade prática para pequenos negócios',relevancia:'Conteúdo com aplicação comercial pode gerar audiência e monetização.',hook:'Pequenos negócios podem estar ignorando esta oportunidade.',angulo:'Transformar uma tendência em uma ação simples para empresas.',publico:'Empreendedores e pequenos negócios.',potencial_viral:74,potencial_negocio:91,riscos:'Evitar prometer resultados financeiros garantidos.'}];const runId=`RUP-${Date.now()}`;return oportunidades.map((o,i)=>({json:{...o,id_oportunidade:`${runId}-${i+1}`,projeto:'RUPTURA ONE',versao:'v3',modo:'MVP_R$0',etapa:'RADAR',criado_em:new Date().toISOString(),origem:'MOCK'}}));"
+      },
+      "id": "v3-radar",
+      "name": "RADAR — MOCK R$0",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const o=item.json;const viral=Math.max(0,Math.min(100,Number(o.potencial_viral)||0));const curiosidade=viral>=85?10:viral>=75?7:5;const compartilhamento=viral>=80?10:7;const retencao=viral>=80?10:7;const score=Math.round((viral*0.55)+(curiosidade*2)+(compartilhamento*2)+(retencao*2));return{json:{...o,viral_score:Math.min(100,score),componentes_viral:{viral,curiosidade,compartilhamento,retencao},etapa:'VIRAL SCORE'}}});"
+      },
+      "id": "v3-viral",
+      "name": "VIRAL SCORE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const o=item.json;const viral=Math.max(0,Math.min(100,Number(o.viral_score)||0));const negocio=Math.max(0,Math.min(100,Number(o.potencial_negocio)||0));const finalScore=Math.round((viral*0.65)+(negocio*0.35));return{json:{...o,business_score:negocio,final_score:finalScore,prioridade:finalScore>=85?'ALTA':finalScore>=70?'MEDIA':'BAIXA',etapa:'BUSINESS SCORE'}}});"
+      },
+      "id": "v3-business",
+      "name": "BUSINESS SCORE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ordenados=[...items].sort((a,b)=>Number(b.json.final_score||0)-Number(a.json.final_score||0));if(!ordenados.length)return[];const selecionado=ordenados[0].json;return[{json:{...selecionado,selecao:{quantidade_recebida:items.length,criterio:'maior final_score',ranking:ordenados.map((x,i)=>({posicao:i+1,id_oportunidade:x.json.id_oportunidade,titulo:x.json.titulo,final_score:x.json.final_score}))},etapa:'SELEÇÃO'}}];"
+      },
+      "id": "v3-select",
+      "name": "SELEÇÃO — TOP OPORTUNIDADE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const riscos=String(d.riscos||'').toLowerCase();const exige_verificacao=riscos.includes('confirmar')||riscos.includes('verificar')||riscos.includes('fontes');return{json:{...d,fact_check:{status:'APROVADO_MOCK',confianca:0,fontes:[],exige_verificacao_real:exige_verificacao,observacao:'MVP R$0: nenhuma fonte externa foi consultada.'},aprovado_para_teste:true,etapa:'FACT-CHECK'}});"
+      },
+      "id": "v3-fact",
+      "name": "FACT-CHECK — MOCK R$0",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const score=Number(d.final_score||0);return{json:{...d,estrategia:{objetivo:score>=85?'maximizar alcance e retenção':'validar interesse do público',hook_principal:d.hook,hook_alternativo:'Pare de fazer isso antes de descobrir este detalhe.',cta_principal:'Salve para ver depois e siga para mais dicas.',formato:'Vídeo curto vertical 9:16',duracao_alvo_segundos:35,teste:'A/B de hook'},etapa:'ESTRATÉGIA'}});"
+      },
+      "id": "v3-strategy",
+      "name": "ESTRATÉGIA DE CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const hook=String(d.estrategia?.hook_principal||d.hook||'').trim();const contexto=String(d.relevancia||'').trim();const angulo=String(d.angulo||'').trim();const roteiro=[`HOOK: ${hook}`,`CONTEXTO: ${contexto}`,`DESENVOLVIMENTO: Explique o ponto principal de forma simples. Ângulo: ${angulo}`,'VALOR: Entregue uma informação prática que o público consiga aplicar.',`CTA: ${d.estrategia?.cta_principal||'Salve e siga para mais conteúdos.'}`].join('\\n\\n');return{json:{...d,roteiro,ia:{modo:'MOCK',conectado:false,proximo_upgrade:'Conectar um provedor de IA gratuito quando disponível.'},etapa:'ROTEIRISTA'}}});"
+      },
+      "id": "v3-writer",
+      "name": "ROTEIRISTA — MOCK / SLOT IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;return{json:{...d,direcao:{abertura:'Texto grande na tela + corte rápido nos primeiros segundos.',cena_1:'Mostrar o problema, objeto ou situação.',cena_2:'Apresentar a explicação principal com elementos visuais simples.',cena_3:'Destacar a conclusão e a ação recomendada.',edicao:'Cortes rápidos, legendas e mudanças visuais periódicas.',audio:'Narração clara e música de fundo discreta.'},etapa:'DIRETOR'}});"
+      },
+      "id": "v3-director",
+      "name": "DIRETOR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const motivos=[];if(d.aprovado_para_teste!==true)motivos.push('Fact-check mock não aprovado.');if(!String(d.hook||'').trim())motivos.push('Hook ausente.');if(!String(d.roteiro||'').trim()||String(d.roteiro).length<80)motivos.push('Roteiro insuficiente.');if(!d.direcao?.abertura)motivos.push('Direção visual incompleta.');const aprovado=motivos.length===0;return{json:{...d,qa_estrategico:{aprovado,motivos},etapa:'QA ESTRATÉGICO',status:aprovado?'APROVADO':'BLOQUEADO'}}});"
+      },
+      "id": "v3-qa-strategy",
+      "name": "QA ESTRATÉGICO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(item=>item.json.qa_estrategico?.aprovado===true).map(item=>{const d=item.json;return{json:{...d,growth:{objetivo:'Testar conteúdo, medir resultado e alimentar o próximo ciclo.',plataformas:['TikTok','Instagram Reels','YouTube Shorts'],metricas:['retenção','visualizações','compartilhamentos','salvamentos','comentários','conversão'],testes:['Hook A','Hook B','CTA A'],regra_mvp:'Após os primeiros 10 conteúdos, comparar resultados e ajustar os pesos do cérebro.'},etapa:'GROWTH'}});"
+      },
+      "id": "v3-growth",
+      "name": "GROWTH — PLANO DE TESTE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const titulo=String(d.titulo||'Conteúdo RUPTURA ONE').trim();const gancho=String(d.hook||d.gancho||`Você sabia que ${titulo.toLowerCase()}?`).trim();const publico=String(d.publico||'público interessado no tema').trim();const angulo=String(d.angulo||'solução prática').trim();return{json:{...d,agente:'GERADOR DE CONTEÚDO',conteudo:{titulo,gancho,desenvolvimento:`Apresente o problema com clareza, explique o ponto principal e entregue uma solução prática. Ângulo: ${angulo}.`,publico,cta:'Siga para mais conteúdos e confira a próxima dica.'},status:'gerado',etapa:'GERADOR DE CONTEÚDO'}}});"
+      },
+      "id": "v3-generator",
+      "name": "GERADOR DE CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const c=d.conteudo||{};const partes=[c.gancho,c.desenvolvimento,c.cta].filter(v=>String(v||'').trim());return{json:{...d,roteiro_final:partes.join('\\n\\n'),duracao_alvo_segundos:35,formato:'video_vertical_9x16',status:'roteiro_pronto',etapa:'ROTEIRO FINAL'}}});"
+      },
+      "id": "v3-final-script",
+      "name": "ROTEIRO FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2880, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const erros=[];if(!String(d.roteiro_final||'').trim())erros.push('Roteiro vazio.');if(String(d.roteiro_final||'').length<40)erros.push('Roteiro muito curto.');if(!String(d.titulo||'').trim())erros.push('Título ausente.');if(!String(d.conteudo?.cta||'').trim())erros.push('CTA ausente.');if(d.qa_estrategico?.aprovado!==true)erros.push('QA estratégico não aprovado.');const aprovado=erros.length===0;return{json:{...d,qa_conteudo:{aprovado,erros},status:aprovado?'APROVADO_PARA_PUBLICACAO_MOCK':'BLOQUEADO',etapa:'QA — CONTEÚDO'}}});"
+      },
+      "id": "v3-qa-content",
+      "name": "QA — CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3120, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(item=>item.json.qa_conteudo?.aprovado===true).map(item=>{const d=item.json;return{json:{...d,publicacao:{plataforma_principal:'TikTok',plataformas_planejadas:['TikTok','Instagram Reels','YouTube Shorts'],formato:'9:16',legenda:`${d.titulo||''}\\n\\n${d.conteudo?.cta||''}`.trim(),roteiro:d.roteiro_final||'',modo:'MOCK_R$0',publicado:false,status:'fila'},etapa:'PACOTE DE PUBLICAÇÃO'}});"
+      },
+      "id": "v3-package",
+      "name": "PACOTE DE PUBLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3360, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const mockId=`MOCK-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;return{json:{...d,publicacao:{...d.publicacao,modo:'MOCK_R$0',publicado:false,simulado:true,resultado:'SIMULADO_COM_SUCESSO',id_publicacao_mock:mockId,timestamp_mock:new Date().toISOString()},etapa:'PUBLICAÇÃO MOCK'}}});"
+      },
+      "id": "v3-publish",
+      "name": "PUBLICAÇÃO — MOCK R$0",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3600, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;return{json:{projeto:d.projeto||'RUPTURA ONE',versao:'v3',id_oportunidade:d.id_oportunidade,id_publicacao_mock:d.publicacao?.id_publicacao_mock||null,titulo:d.titulo,final_score:d.final_score,prioridade:d.prioridade,qa_estrategico:d.qa_estrategico,qa_conteudo:d.qa_conteudo,publicacao:d.publicacao,registro:{plataforma:d.publicacao?.plataforma_principal||'TikTok',etapa:'REGISTRO',modo:'MOCK_R$0',timestamp:new Date().toISOString(),resultado:'REGISTRADO_COM_SUCESSO'}}}});"
+      },
+      "id": "v3-register",
+      "name": "REGISTRO — PUBLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3840, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;return{json:{...d,metricas_mock:{disponiveis:false,visualizacoes:0,retencao:0,compartilhamentos:0,salvamentos:0,comentarios:0,conversao:0,observacao:'Métricas reais entram quando a publicação real e a coleta de dados estiverem conectadas.'},etapa:'MÉTRICAS'}});"
+      },
+      "id": "v3-metrics",
+      "name": "MÉTRICAS — MOCK R$0",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4080, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;const pesosAtuais={viral:0.65,negocio:0.35};const dadosReaisDisponiveis=d.metricas_mock?.disponiveis===true;return{json:{...d,aprendizado:{dados_reais_disponiveis:dadosReaisDisponiveis,amostras:1,pesos_atuais:pesosAtuais,pesos_sugeridos:pesosAtuais,acao:dadosReaisDisponiveis?'Calcular ajuste com base em amostra suficiente.':'Manter pesos atuais até existirem dados reais.',regra_seguranca:'Nunca alterar pesos com amostra insuficiente.'},etapa:'APRENDIZADO'}}});"
+      },
+      "id": "v3-learning",
+      "name": "APRENDIZADO — MOCK R$0",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4320, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item=>{const d=item.json;return{json:{projeto:'RUPTURA ONE',versao:'v3',ciclo:{id_oportunidade:d.id_oportunidade,titulo:d.titulo,final_score:d.final_score,prioridade:d.prioridade},status_pipeline:'OK_MVP_R$0',publicacao_mock:d.publicacao?.resultado||null,metricas_reais:d.metricas_mock?.disponiveis===true,aprendizado:d.aprendizado?.acao||null,proximo_upgrade:'Conectar fontes/radar real, IA e métricas reais sem quebrar o modo R$0.'}}});"
+      },
+      "id": "v3-report",
+      "name": "RELATÓRIO — CICLO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4560, 0]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GATILHO — RADAR A CADA 6H":{"main":[[{"node":"RADAR — MOCK R$0","type":"main","index":0}]]},
+    "RADAR — MOCK R$0":{"main":[[{"node":"VIRAL SCORE","type":"main","index":0}]]},
+    "VIRAL SCORE":{"main":[[{"node":"BUSINESS SCORE","type":"main","index":0}]]},
+    "BUSINESS SCORE":{"main":[[{"node":"SELEÇÃO — TOP OPORTUNIDADE","type":"main","index":0}]]},
+    "SELEÇÃO — TOP OPORTUNIDADE":{"main":[[{"node":"FACT-CHECK — MOCK R$0","type":"main","index":0}]]},
+    "FACT-CHECK — MOCK R$0":{"main":[[{"node":"ESTRATÉGIA DE CONTEÚDO","type":"main","index":0}]]},
+    "ESTRATÉGIA DE CONTEÚDO":{"main":[[{"node":"ROTEIRISTA — MOCK / SLOT IA","type":"main","index":0}]]},
+    "ROTEIRISTA — MOCK / SLOT IA":{"main":[[{"node":"DIRETOR","type":"main","index":0}]]},
+    "DIRETOR":{"main":[[{"node":"QA ESTRATÉGICO","type":"main","index":0}]]},
+    "QA ESTRATÉGICO":{"main":[[{"node":"GROWTH — PLANO DE TESTE","type":"main","index":0}]]},
+    "GROWTH — PLANO DE TESTE":{"main":[[{"node":"GERADOR DE CONTEÚDO","type":"main","index":0}]]},
+    "GERADOR DE CONTEÚDO":{"main":[[{"node":"ROTEIRO FINAL","type":"main","index":0}]]},
+    "ROTEIRO FINAL":{"main":[[{"node":"QA — CONTEÚDO","type":"main","index":0}]]},
+    "QA — CONTEÚDO":{"main":[[{"node":"PACOTE DE PUBLICAÇÃO","type":"main","index":0}]]},
+    "PACOTE DE PUBLICAÇÃO":{"main":[[{"node":"PUBLICAÇÃO — MOCK R$0","type":"main","index":0}]]},
+    "PUBLICAÇÃO — MOCK R$0":{"main":[[{"node":"REGISTRO — PUBLICAÇÃO","type":"main","index":0}]]},
+    "REGISTRO — PUBLICAÇÃO":{"main":[[{"node":"MÉTRICAS — MOCK R$0","type":"main","index":0}]]},
+    "MÉTRICAS — MOCK R$0":{"main":[[{"node":"APRENDIZADO — MOCK R$0","type":"main","index":0}]]},
+    "APRENDIZADO — MOCK R$0":{"main":[[{"node":"RELATÓRIO — CICLO","type":"main","index":0}]]}
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "description": "RUPTURA ONE v3: pipeline completa em modo MOCK R$0, com seleção, QA, publicação simulada, métricas mock e camada de aprendizado preparada."
+  }
+}
