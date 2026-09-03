@@ -1,0 +1,491 @@
+import json, os
+
+def code_node(node_id, name, code, x, y):
+    return {
+        "parameters": {
+            "jsCode": code,
+            "mode": "runOnceForAllItems"
+        },
+        "id": node_id,
+        "name": name,
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [x, y]
+    }
+
+nodes = [
+    {
+        "parameters": {
+            "rule": {
+                "interval": [{"field": "hours", "hoursInterval": 6}]
+            }
+        },
+        "id": "v4-trigger",
+        "name": "GATILHO — RADAR A CADA 6H",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [0, 0]
+    },
+    code_node("v4-radar", "RADAR — MOCK R$0", r"""
+const agora = new Date().toISOString();
+
+const oportunidades = [
+  {
+    titulo: "Tecnologia que está mudando uma tarefa comum",
+    relevancia: "Mudanças tecnológicas em tarefas do dia a dia despertam curiosidade.",
+    hook: "Você ainda faz isso do jeito antigo?",
+    angulo: "Mostrar a mudança de forma simples e prática.",
+    publico: "Público geral interessado em tecnologia e praticidade.",
+    potencial_viral: 78,
+    potencial_negocio: 72,
+    riscos: "Confirmar dados antes da publicação."
+  },
+  {
+    titulo: "Um erro simples que faz as pessoas perderem tempo",
+    relevancia: "Problemas cotidianos têm forte potencial de identificação.",
+    hook: "Esse pequeno erro pode estar roubando seu tempo todos os dias.",
+    angulo: "Apresentar o erro e uma solução prática.",
+    publico: "Pessoas interessadas em produtividade.",
+    potencial_viral: 84,
+    potencial_negocio: 76,
+    riscos: "Evitar promessas exageradas."
+  },
+  {
+    titulo: "Uma mudança de comportamento que quase ninguém percebeu",
+    relevancia: "Mudanças de comportamento geram curiosidade e discussão.",
+    hook: "Você percebeu que as pessoas começaram a fazer isso diferente?",
+    angulo: "Explicar a mudança através de exemplos cotidianos.",
+    publico: "Público geral.",
+    potencial_viral: 82,
+    potencial_negocio: 68,
+    riscos: "Precisará de fontes para comprovar a mudança."
+  },
+  {
+    titulo: "A curiosidade por trás de um objeto que usamos todos os dias",
+    relevancia: "Curiosidades sobre objetos comuns possuem alto potencial de retenção.",
+    hook: "Você usa isso todos os dias, mas provavelmente não sabe por quê.",
+    angulo: "Contar a curiosidade de forma rápida e visual.",
+    publico: "Público geral curioso.",
+    potencial_viral: 88,
+    potencial_negocio: 61,
+    riscos: "Confirmar origem e dados históricos."
+  },
+  {
+    titulo: "Uma solução simples para um problema recorrente",
+    relevancia: "Soluções práticas são fáceis de testar e compartilhar.",
+    hook: "Antes de perder mais tempo com isso, veja esta solução.",
+    angulo: "Demonstrar problema, solução e resultado.",
+    publico: "Pessoas que gostam de dicas práticas.",
+    potencial_viral: 80,
+    potencial_negocio: 81,
+    riscos: "Testar a solução antes de afirmar resultado."
+  }
+];
+
+return oportunidades.map((o, index) => ({
+  json: {
+    ...o,
+    id_oportunidade: "OP-" + String(index + 1).padStart(3, "0"),
+    projeto: "RUPTURA ONE",
+    versao: "v4",
+    modo: "MVP_R$0",
+    origem: "MOCK",
+    coletado_em: agora,
+    etapa: "RADAR"
+  }
+}));
+""", 240, 0),
+    code_node("v4-viral", "VIRAL SCORE", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const viral = Math.max(0, Math.min(100, Number(d.potencial_viral) || 0));
+  const curiosidade = viral >= 85 ? 10 : viral >= 75 ? 8 : 6;
+  const compartilhamento = viral >= 80 ? 10 : 7;
+  const retencao = viral >= 80 ? 10 : 7;
+  const score = Math.round(
+    viral * 0.55 +
+    curiosidade * 2 +
+    compartilhamento * 2 +
+    retencao * 2
+  );
+
+  return {
+    json: {
+      ...d,
+      viral_score: Math.min(100, score),
+      componentes_viral: { viral, curiosidade, compartilhamento, retencao },
+      etapa: "VIRAL SCORE"
+    }
+  };
+});
+""", 480, 0),
+    code_node("v4-business", "BUSINESS SCORE", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const viral = Math.max(0, Math.min(100, Number(d.viral_score) || 0));
+  const negocio = Math.max(0, Math.min(100, Number(d.potencial_negocio) || 0));
+  const score = Math.round(viral * 0.55 + negocio * 0.45);
+
+  return {
+    json: {
+      ...d,
+      business_score: Math.round(negocio),
+      final_score: score,
+      etapa: "BUSINESS SCORE"
+    }
+  };
+});
+""", 720, 0),
+    code_node("v4-select", "SELEÇÃO — TOP OPORTUNIDADE", r"""
+const itens = $input.all().map(item => item.json || {});
+if (itens.length === 0) {
+  return [];
+}
+
+itens.sort((a, b) => Number(b.final_score || 0) - Number(a.final_score || 0));
+const top = itens[0];
+
+return [{
+  json: {
+    ...top,
+    ranking: 1,
+    total_oportunidades: itens.length,
+    etapa: "SELEÇÃO"
+  }
+}];
+""", 960, 0),
+    code_node("v4-fact", "FACT-CHECK — MOCK R$0", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const riscos = String(d.riscos || "").toLowerCase();
+
+  const exige_verificacao =
+    riscos.indexOf("confirmar") >= 0 ||
+    riscos.indexOf("verificar") >= 0 ||
+    riscos.indexOf("fontes") >= 0 ||
+    riscos.indexOf("testar") >= 0;
+
+  return {
+    json: {
+      ...d,
+      fact_check: {
+        status: "APROVADO_MOCK",
+        confianca: 0,
+        fontes: [],
+        exige_verificacao_real: exige_verificacao,
+        observacao: "MVP R$0: nenhuma fonte externa foi consultada. Resultado válido somente para teste."
+      },
+      aprovado_para_teste: true,
+      etapa: "FACT-CHECK"
+    }
+  };
+});
+""", 1200, 0),
+    code_node("v4-strategy", "ESTRATÉGIA DE CONTEÚDO", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  return {
+    json: {
+      ...d,
+      estrategia: {
+        objetivo: "Gerar atenção e retenção sem promessas exageradas.",
+        hook_principal: d.hook || "Você ainda faz isso do jeito antigo?",
+        hook_alternativo: "Quase ninguém percebeu esta mudança.",
+        cta: "Comente o que você faria.",
+        formato: "Vídeo vertical curto",
+        duracao_segundos: 30,
+        teste_ab: "hook_principal_vs_alternativo"
+      },
+      etapa: "ESTRATÉGIA"
+    }
+  };
+});
+""", 1440, 0),
+    code_node("v4-writer", "ROTEIRISTA — MOCK / SLOT IA", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const hook = (d.estrategia && d.estrategia.hook_principal) || d.hook || d.gancho || d.titulo;
+
+  const roteiro = [
+    hook,
+    "Em poucos segundos, vamos entender o que está acontecendo.",
+    d.angulo || "Veja o ponto principal e como isso afeta a vida real.",
+    "Se esta informação foi útil, salve e compartilhe."
+  ].join(" ");
+
+  return {
+    json: {
+      ...d,
+      roteiro_base: roteiro,
+      ia: {
+        modo: "MOCK",
+        conectado: false,
+        proximo_upgrade: "Conectar um provedor de IA gratuito quando disponível."
+      },
+      etapa: "ROTEIRISTA"
+    }
+  };
+});
+""", 1680, 0),
+    code_node("v4-director", "DIRETOR", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  return {
+    json: {
+      ...d,
+      direcao: {
+        abertura: "Começar imediatamente com o hook.",
+        cena_1: "Texto ou imagem que represente o problema.",
+        cena_2: "Explicação visual do ponto principal.",
+        cena_3: "Conclusão com CTA.",
+        ritmo: "Cortes rápidos e linguagem simples.",
+        formato: "9:16"
+      },
+      etapa: "DIRETOR"
+    }
+  };
+});
+""", 1920, 0),
+    code_node("v4-qa-strat", "QA ESTRATÉGICO", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const fc = d.fact_check && d.fact_check.status === "APROVADO_MOCK";
+  const hasStrategy = !!d.estrategia;
+  const hasScript = !!d.roteiro_base;
+
+  return {
+    json: {
+      ...d,
+      qa_estrategico: {
+        aprovado: fc && hasStrategy && hasScript,
+        erros: [
+          ...(!fc ? ["Fact-check não aprovado"] : []),
+          ...(!hasStrategy ? ["Estratégia ausente"] : []),
+          ...(!hasScript ? ["Roteiro ausente"] : [])
+        ]
+      },
+      etapa: "QA ESTRATÉGICO"
+    }
+  };
+});
+""", 2160, 0),
+    code_node("v4-growth", "GROWTH — PLANO DE TESTE", r"""
+return $input.all()
+  .filter(item => item.json && item.json.qa_estrategico && item.json.qa_estrategico.aprovado === true)
+  .map(item => ({
+    json: {
+      ...item.json,
+      growth: {
+        teste: "A/B de hook",
+        variacao_a: item.json.estrategia ? item.json.estrategia.hook_principal : item.json.hook,
+        variacao_b: item.json.estrategia ? item.json.estrategia.hook_alternativo : "Hook alternativo",
+        indicador_principal: "retencao",
+        indicador_secundario: "compartilhamentos"
+      },
+      etapa: "GROWTH"
+    }
+  }));
+""", 2400, 0),
+    code_node("v4-generator", "GERADOR DE CONTEÚDO", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const hook = d.hook || d.gancho || (d.estrategia && d.estrategia.hook_principal) || d.titulo;
+
+  return {
+    json: {
+      ...d,
+      conteudo: {
+        titulo: d.titulo,
+        hook,
+        corpo: d.roteiro_base || d.relevancia || "",
+        cta: d.estrategia ? d.estrategia.cta : "Comente o que você acha.",
+        formato: "vídeo_vertical"
+      },
+      etapa: "GERADOR DE CONTEÚDO"
+    }
+  };
+});
+""", 2640, 0),
+    code_node("v4-final", "ROTEIRO FINAL", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const c = d.conteudo || {};
+  const roteiro = [
+    c.hook || d.hook || d.titulo,
+    c.corpo || d.roteiro_base || "",
+    c.cta || "Comente o que você acha."
+  ].join(" ").replace(/\s+/g, " ").trim();
+
+  return {
+    json: {
+      ...d,
+      roteiro_final: roteiro,
+      etapa: "ROTEIRO FINAL"
+    }
+  };
+});
+""", 2880, 0),
+    code_node("v4-qa-content", "QA — CONTEÚDO", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  const texto = String(d.roteiro_final || "").trim();
+  const erros = [];
+
+  if (!texto) erros.push("Roteiro final vazio");
+  if (texto.length < 40) erros.push("Roteiro final muito curto");
+  if (!d.qa_estrategico || d.qa_estrategico.aprovado !== true) erros.push("QA estratégico não aprovado");
+
+  return {
+    json: {
+      ...d,
+      qa_conteudo: {
+        aprovado: erros.length === 0,
+        erros
+      },
+      etapa: "QA — CONTEÚDO"
+    }
+  };
+});
+""", 3120, 0),
+    code_node("v4-package", "PACOTE DE PUBLICAÇÃO", r"""
+return $input.all()
+  .filter(item => item.json && item.json.qa_conteudo && item.json.qa_conteudo.aprovado === true)
+  .map(item => {
+    const d = item.json;
+    return {
+      json: {
+        ...d,
+        pacote_publicacao: {
+          plataforma: "TIKTOK",
+          formato: "VIDEO_9_16",
+          titulo: d.titulo,
+          roteiro: d.roteiro_final,
+          legenda: d.titulo,
+          hashtags: ["#RUPTURAONE", "#tecnologia", "#curiosidades"]
+        },
+        publicado: false,
+        modo: "MOCK_R$0",
+        etapa: "PACOTE DE PUBLICAÇÃO"
+      }
+    };
+  });
+""", 3360, 0),
+    code_node("v4-publish", "PUBLICAÇÃO — MOCK R$0", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  return {
+    json: {
+      ...d,
+      publicado: false,
+      simulado: true,
+      resultado: "SIMULADO_COM_SUCESSO",
+      id_publicacao_mock: "MOCK-" + Date.now(),
+      observacao_publicacao: "Nenhuma publicação real foi feita."
+    }
+  };
+});
+""", 3600, 0),
+    code_node("v4-register", "REGISTRO — PUBLICAÇÃO", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  return {
+    json: {
+      ...d,
+      registro_publicacao: {
+        id: d.id_publicacao_mock || null,
+        plataforma: "TIKTOK",
+        publicado: false,
+        simulado: true,
+        registrado_em: new Date().toISOString()
+      },
+      etapa: "REGISTRO"
+    }
+  };
+});
+""", 3840, 0),
+    code_node("v4-metrics", "MÉTRICAS — MOCK R$0", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  return {
+    json: {
+      ...d,
+      metricas: {
+        visualizacoes: 0,
+        curtidas: 0,
+        comentarios: 0,
+        compartilhamentos: 0,
+        retencao_media: 0,
+        origem: "MOCK",
+        observacao: "Sem métricas reais porque não houve publicação real."
+      },
+      etapa: "MÉTRICAS"
+    }
+  };
+});
+""", 4080, 0),
+    code_node("v4-learning", "APRENDIZADO — MOCK R$0", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  return {
+    json: {
+      ...d,
+      aprendizado: {
+        atualizado: false,
+        motivo: "Sem dados reais suficientes para alterar pesos.",
+        regra: "Não alterar pesos com métricas simuladas."
+      },
+      etapa: "APRENDIZADO"
+    }
+  };
+});
+""", 4320, 0),
+    code_node("v4-report", "RELATÓRIO — CICLO", r"""
+return $input.all().map(item => {
+  const d = item.json || {};
+  return {
+    json: {
+      ...d,
+      relatorio_ciclo: {
+        status_pipeline: "OK_MVP_R$0",
+        oportunidade: d.id_oportunidade || null,
+        score: d.final_score || 0,
+        qa_estrategico: !!(d.qa_estrategico && d.qa_estrategico.aprovado),
+        qa_conteudo: !!(d.qa_conteudo && d.qa_conteudo.aprovado),
+        publicacao_real: false,
+        proximo_upgrade: "Substituir MOCK por fontes reais, IA gratuita quando disponível, armazenamento e publicação TikTok."
+      },
+      etapa: "RELATÓRIO — CICLO"
+    }
+  };
+});
+""", 4560, 0)
+]
+
+connections = {}
+for a, b in zip(nodes, nodes[1:]):
+    connections[a["name"]] = {
+        "main": [[{"node": b["name"], "type": "main", "index": 0}]]
+    }
+
+workflow = {
+    "name": "RUPTURA ONE — BRAIN v4 — MVP R$0 SEM ERROS",
+    "nodes": nodes,
+    "connections": connections,
+    "active": False,
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate"
+    },
+    "tags": [],
+    "meta": {
+        "templateCredsSetupCompleted": True,
+        "description": "RUPTURA ONE v4: pipeline linear em MOCK R$0, sem credenciais, sem APIs pagas, com QA e publicação simulada."
+    }
+}
+
+path = "/mnt/data/RUPTURA_ONE_BRAIN_v4_MVP_R0_SEM_ERROS.json"
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(workflow, f, ensure_ascii=False, indent=2)
+
+print(path)
+print(f"{len(nodes)} nós criados.")
