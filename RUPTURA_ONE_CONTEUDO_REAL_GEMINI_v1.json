@@ -1,0 +1,196 @@
+import json, uuid
+from pathlib import Path
+
+def uid():
+    return str(uuid.uuid4())
+
+nodes = []
+
+def add(name, ntype, params, pos, typeVersion=2):
+    nodes.append({
+        "parameters": params,
+        "id": uid(),
+        "name": name,
+        "type": ntype,
+        "typeVersion": typeVersion,
+        "position": pos
+    })
+
+add("INÍCIO — GERAR CONTEÚDO REAL", "n8n-nodes-base.manualTrigger", {}, [0, 0], 1)
+
+add("BRIEF — TEMA REAL", "n8n-nodes-base.code", {
+    "mode": "runOnceForAllItems",
+    "jsCode": """return [{
+  json: {
+    projeto: "RUPTURA ONE",
+    tema: "inteligência artificial para aumentar produtividade e renda",
+    publico: "brasileiros interessados em IA, produtividade, negócios e renda online",
+    plataforma: "TikTok / Reels / Shorts",
+    objetivo: "criar conteúdo curto com potencial de retenção e conversão",
+    idioma: "pt-BR",
+    tom: "direto, inteligente, curioso e prático",
+    data_execucao: new Date().toISOString()
+  }
+}];"""
+}, [220, 0])
+
+add("GEMINI — GERAÇÃO REAL", "n8n-nodes-base.httpRequest", {
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+    "sendHeaders": True,
+    "headerParameters": {
+        "parameters": [
+            {
+                "name": "x-goog-api-key",
+                "value": "COLE_SUA_CHAVE_GEMINI_AQUI"
+            },
+            {
+                "name": "Content-Type",
+                "value": "application/json"
+            }
+        ]
+    },
+    "sendBody": True,
+    "contentType": "raw",
+    "rawContentType": "application/json",
+    "body": "={{ JSON.stringify({ model: 'gemini-3.8-flash', input: `Você é o estrategista de conteúdo do RUPTURA ONE. Crie um conteúdo ORIGINAL para vídeo vertical curto, em português do Brasil, baseado neste briefing: Tema: ${$json.tema}; Público: ${$json.publico}; Plataforma: ${$json.plataforma}; Objetivo: ${$json.objetivo}; Tom: ${$json.tom}. Entregue somente JSON válido, sem markdown, com os campos: titulo, gancho, roteiro, legenda, cta, hashtags, ideia_visual, duracao_segundos. O roteiro deve ter gancho forte nos primeiros segundos, desenvolvimento objetivo, uma informação ou insight útil e CTA natural. Não invente estatísticas, pesquisas, preços ou resultados. Se uma afirmação depender de fonte externa, escreva de forma não factual ou indique que precisa ser verificada. ` }) }}"
+}, [440, 0], 4.2)
+
+add("PARSE — RESPOSTA GEMINI", "n8n-nodes-base.code", {
+    "mode": "runOnceForAllItems",
+    "jsCode": """const r = $input.first().json;
+const text = r?.steps
+  ?.filter(s => s.type === "model_output")
+  ?.flatMap(s => s.content || [])
+  ?.filter(c => c.type === "text")
+  ?.map(c => c.text)
+  ?.join("\\n")
+  || r?.output_text
+  || r?.text
+  || "";
+
+if (!text) {
+  throw new Error("Gemini não retornou texto. Verifique a chave da API e a resposta do modelo.");
+}
+
+let cleaned = text.trim()
+  .replace(/^```json\\s*/i, "")
+  .replace(/^```\\s*/i, "")
+  .replace(/\\s*```$/i, "")
+  .trim();
+
+let content;
+try {
+  content = JSON.parse(cleaned);
+} catch (e) {
+  throw new Error("Gemini retornou texto que não pôde ser convertido em JSON. Resposta recebida: " + cleaned.slice(0, 1000));
+}
+
+return [{
+  json: {
+    ...content,
+    gerado_por: "Google Gemini API",
+    modelo: r.model || "gemini-3.8-flash",
+    gerado_em: new Date().toISOString(),
+    status: "CONTEÚDO_REAL_GERADO"
+  }
+}];"""
+}, [660, 0])
+
+add("QA — CONTEÚDO REAL", "n8n-nodes-base.code", {
+    "mode": "runOnceForAllItems",
+    "jsCode": """const d = $input.first().json;
+const obrigatorios = ["titulo", "gancho", "roteiro", "legenda", "cta", "hashtags"];
+const faltantes = obrigatorios.filter(k => !d[k] || String(d[k]).trim() === "");
+
+if (faltantes.length) {
+  throw new Error("QA reprovado. Campos ausentes: " + faltantes.join(", "));
+}
+
+if (String(d.roteiro).length < 150) {
+  throw new Error("QA reprovado. O roteiro gerado ficou curto demais.");
+}
+
+return [{
+  json: {
+    ...d,
+    qa: {
+      aprovado: true,
+      faltantes: [],
+      verificacao: "estrutura, gancho, roteiro, legenda, CTA e hashtags"
+    },
+    status: "APROVADO_PARA_USO"
+  }
+}];"""
+}, [880, 0])
+
+add("PACOTE — CONTEÚDO PRONTO", "n8n-nodes-base.code", {
+    "mode": "runOnceForAllItems",
+    "jsCode": """const d = $input.first().json;
+
+return [{
+  json: {
+    projeto: "RUPTURA ONE",
+    status: "PRONTO",
+    titulo: d.titulo,
+    gancho: d.gancho,
+    roteiro: d.roteiro,
+    legenda: d.legenda,
+    cta: d.cta,
+    hashtags: d.hashtags,
+    ideia_visual: d.ideia_visual || "",
+    duracao_segundos: d.duracao_segundos || 35,
+    modelo_ia: d.modelo || "gemini-3.8-flash",
+    gerado_por: d.gerado_por,
+    qa: d.qa,
+    gerado_em: d.gerado_em
+  }
+}];"""
+}, [1100, 0])
+
+connections = {}
+for a,b in zip(nodes, nodes[1:]):
+    connections[a["name"]] = {"main": [[{"node": b["name"], "type": "main", "index": 0}]]}
+
+workflow = {
+    "id": uid(),
+    "name": "RUPTURA ONE — CONTEÚDO REAL — Gemini",
+    "nodes": nodes,
+    "pinData": {},
+    "connections": connections,
+    "active": False,
+    "settings": {
+        "executionOrder": "v1",
+        "saveManualExecutions": True,
+        "callerPolicy": "workflowsFromSameOwner",
+        "errorWorkflow": None,
+        "timezone": "America/Sao_Paulo",
+        "executionTimeout": 3600,
+        "maxExecutions": 1000
+    },
+    "staticData": None,
+    "tags": [],
+    "versionId": uid(),
+    "meta": {
+        "instanceId": uid(),
+        "templateCredsSetupCompleted": True
+    },
+    "description": "RUPTURA ONE com geração real de conteúdo via Gemini Interactions API.",
+    "notes": "Antes de executar, substitua COLE_SUA_CHAVE_GEMINI_AQUI pela chave da Gemini API no nó GEMINI — GERAÇÃO REAL."
+}
+
+path = Path("/mnt/data/RUPTURA_ONE_CONTEUDO_REAL_GEMINI_v1.json")
+path.write_text(json.dumps(workflow, ensure_ascii=False, indent=2), encoding="utf-8")
+
+# Validate JSON and connections
+json.loads(path.read_text(encoding="utf-8"))
+node_names = {n["name"] for n in nodes}
+assert all(
+    c["node"] in node_names
+    for conn in connections.values()
+    for outs in conn["main"]
+    for c in outs
+)
+
+print(f"Arquivo criado: {path}")
+print(f"Nós: {len(nodes)} | Conexões: {len(connections)}")
