@@ -1,0 +1,171 @@
+{
+  "name": "RUPTURA ONE — CONTEÚDO REAL — GEMINI v4 CORRIGIDO",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ab8aee18-053f-4237-8f89-277a179966ad",
+      "name": "INÍCIO — GERAR CONTEÚDO",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    projeto: \"RUPTURA ONE\",\n    tema: \"Como usar inteligência artificial para economizar tempo e aumentar produtividade\",\n    publico: \"brasileiros interessados em IA, produtividade, negócios e renda online\",\n    plataforma: \"TikTok, Instagram Reels e YouTube Shorts\",\n    objetivo: \"gerar um vídeo curto útil, original e com potencial de retenção\",\n    idioma: \"pt-BR\",\n    tom: \"direto, curioso, prático e convincente\",\n    data_execucao: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "a04fe1fc-4f58-49d3-88f2-bb45a952cd8c",
+      "name": "BRIEF — TEMA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-goog-api-key",
+              "value": "COLE_SUA_NOVA_CHAVE_GEMINI_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  model: 'gemini-3.8-flash',\n  input: 'Você é o estrategista de conteúdo do RUPTURA ONE.\\n\\nCrie um conteúdo ORIGINAL para vídeo vertical curto em português do Brasil.\\n\\nTema: ' + $json.tema + '\\nPúblico: ' + $json.publico + '\\nPlataforma: ' + $json.plataforma + '\\nObjetivo: ' + $json.objetivo + '\\nTom: ' + $json.tom + '\\nIdioma: ' + $json.idioma + '\\n\\nRegras:\\n- Crie conteúdo útil, concreto e natural para narração.\\n- Não invente estatísticas, pesquisas, preços ou resultados.\\n- Não prometa renda garantida.\\n- Não faça afirmações factuais específicas que não sejam necessárias.\\n- O gancho deve prender a atenção nos primeiros segundos.\\n- O roteiro deve ser adequado para vídeo vertical curto.\\n- A CTA deve ser curta e natural.\\n- Gere de 3 a 6 hashtags relevantes.\\n- duracao_segundos deve ser um número inteiro entre 20 e 90.\\n\\nRetorne SOMENTE o objeto JSON definido pelo schema. Não escreva markdown, explicações ou blocos ```json.',\n  response_format: {\n    type: 'text',\n    mime_type: 'application/json',\n    schema: {\n      type: 'object',\n      properties: {\n        titulo: { type: 'string' },\n        gancho: { type: 'string' },\n        roteiro: { type: 'string' },\n        legenda: { type: 'string' },\n        cta: { type: 'string' },\n        hashtags: {\n          type: 'array',\n          items: { type: 'string' }\n        },\n        ideia_visual: { type: 'string' },\n        duracao_segundos: { type: 'integer' }\n      },\n      required: [\n        'titulo',\n        'gancho',\n        'roteiro',\n        'legenda',\n        'cta',\n        'hashtags',\n        'ideia_visual',\n        'duracao_segundos'\n      ]\n    }\n  },\n  generation_config: {\n    max_output_tokens: 1600\n  }\n}) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "11530c13-cf83-4725-8813-30a5b7925ac9",
+      "name": "GEMINI — IA REAL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\n\nif (!r) {\n  throw new Error('Gemini não retornou nenhum objeto de resposta.');\n}\n\nif (r.status === 'failed') {\n  const detalhes = Array.isArray(r.errors)\n    ? r.errors.map(e => e.message || JSON.stringify(e)).join(' | ')\n    : 'Erro não informado pela API.';\n  throw new Error('Gemini retornou status FAILED: ' + detalhes);\n}\n\nif (r.status === 'requires_action') {\n  throw new Error('Gemini retornou requires_action. Este fluxo não utiliza ferramentas que exigem ação externa.');\n}\n\nif (r.status === 'incomplete') {\n  throw new Error('Gemini retornou uma resposta incompleta. Aumente max_output_tokens ou simplifique o prompt.');\n}\n\nlet text = '';\n\nif (typeof r.output_text === 'string' && r.output_text.trim()) {\n  text = r.output_text;\n}\n\nif (!text && typeof r.outputText === 'string' && r.outputText.trim()) {\n  text = r.outputText;\n}\n\nif (!text && Array.isArray(r.steps)) {\n  const textos = [];\n\n  for (const step of r.steps) {\n    if (!step || step.type !== 'model_output') continue;\n    if (!Array.isArray(step.content)) continue;\n\n    for (const part of step.content) {\n      if (part && part.type === 'text' && typeof part.text === 'string') {\n        textos.push(part.text);\n      }\n    }\n  }\n\n  text = textos.join('').trim();\n}\n\nif (!text && Array.isArray(r.outputs)) {\n  const textos = [];\n\n  for (const output of r.outputs) {\n    if (output && typeof output.text === 'string') {\n      textos.push(output.text);\n    }\n\n    if (Array.isArray(output?.content)) {\n      for (const part of output.content) {\n        if (part && part.type === 'text' && typeof part.text === 'string') {\n          textos.push(part.text);\n        }\n      }\n    }\n  }\n\n  text = textos.join('').trim();\n}\n\nif (!text) {\n  throw new Error(\n    'Gemini respondeu, mas nenhum texto foi encontrado. Status: ' +\n    String(r.status || 'desconhecido') +\n    '. Resposta recebida: ' + JSON.stringify(r).slice(0, 3000)\n  );\n}\n\nlet cleaned = String(text).trim();\n\ncleaned = cleaned\n  .replace(/^```json\\\\s*/i, '')\n  .replace(/^```\\\\s*/i, '')\n  .replace(/\\\\s*```$/i, '')\n  .trim();\n\nconst inicio = cleaned.indexOf('{');\nconst fim = cleaned.lastIndexOf('}');\n\nif (inicio !== -1 && fim !== -1 && fim > inicio) {\n  cleaned = cleaned.slice(inicio, fim + 1);\n}\n\nlet content;\n\ntry {\n  content = JSON.parse(cleaned);\n} catch (e) {\n  throw new Error(\n    'Gemini retornou texto, mas o conteúdo não pôde ser convertido em JSON. Conteúdo recebido: ' +\n    cleaned.slice(0, 2000)\n  );\n}\n\nif (!content || typeof content !== 'object' || Array.isArray(content)) {\n  throw new Error('A resposta estruturada do Gemini não é um objeto JSON.');\n}\n\nreturn [{\n  json: {\n    ...content,\n    gerado_por: 'Google Gemini API',\n    modelo: r.model || 'gemini-3.8-flash',\n    status_api: r.status || 'completed',\n    interaction_id: r.id || null,\n    gerado_em: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "4a89d095-6cc8-4c2c-acc5-66f1d915fd54",
+      "name": "CONVERTER — CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\n\nconst obrigatorios = [\n  'titulo',\n  'gancho',\n  'roteiro',\n  'legenda',\n  'cta',\n  'hashtags',\n  'ideia_visual',\n  'duracao_segundos'\n];\n\nconst faltantes = obrigatorios.filter(k => {\n  const valor = d[k];\n\n  if (valor === undefined || valor === null) return true;\n  if (typeof valor === 'string' && valor.trim() === '') return true;\n  if (Array.isArray(valor) && valor.length === 0) return true;\n\n  return false;\n});\n\nif (faltantes.length > 0) {\n  throw new Error('QA REPROVADO — campos ausentes ou vazios: ' + faltantes.join(', '));\n}\n\nif (!Array.isArray(d.hashtags)) {\n  throw new Error('QA REPROVADO — hashtags deve ser uma lista.');\n}\n\nif (d.hashtags.length < 3 || d.hashtags.length > 10) {\n  throw new Error('QA REPROVADO — hashtags deve conter entre 3 e 10 itens.');\n}\n\nif (!Number.isInteger(d.duracao_segundos)) {\n  throw new Error('QA REPROVADO — duracao_segundos deve ser um número inteiro.');\n}\n\nif (d.duracao_segundos < 20 || d.duracao_segundos > 90) {\n  throw new Error('QA REPROVADO — duracao_segundos deve estar entre 20 e 90 segundos.');\n}\n\nif (String(d.gancho).trim().length < 20) {\n  throw new Error('QA REPROVADO — gancho muito curto.');\n}\n\nif (String(d.roteiro).trim().length < 250) {\n  throw new Error('QA REPROVADO — roteiro muito curto para o formato proposto.');\n}\n\nif (String(d.titulo).trim().length < 5) {\n  throw new Error('QA REPROVADO — título muito curto.');\n}\n\nreturn [{\n  json: {\n    ...d,\n    qa: {\n      aprovado: true,\n      status: 'APROVADO',\n      campos_verificados: obrigatorios,\n      verificacoes: {\n        estrutura_json: true,\n        campos_obrigatorios: true,\n        hashtags_validas: true,\n        duracao_valida: true,\n        gancho_valido: true,\n        roteiro_valido: true\n      }\n    },\n    status: 'CONTEUDO_REAL_PRONTO'\n  }\n}];"
+      },
+      "id": "7621e010-59c7-4a42-9659-6f06c90f2f9f",
+      "name": "QA — CONTEÚDO REAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\n\nreturn [{\n  json: {\n    projeto: 'RUPTURA ONE',\n    status: d.status,\n    gerado_por: d.gerado_por,\n    modelo: d.modelo,\n    interaction_id: d.interaction_id,\n    status_api: d.status_api,\n    titulo: d.titulo,\n    gancho: d.gancho,\n    roteiro: d.roteiro,\n    legenda: d.legenda,\n    cta: d.cta,\n    hashtags: d.hashtags,\n    ideia_visual: d.ideia_visual,\n    duracao_segundos: d.duracao_segundos,\n    qa: d.qa,\n    gerado_em: d.gerado_em\n  }\n}];"
+      },
+      "id": "1ec350e6-f835-402c-8bca-234687f1e2a1",
+      "name": "SAÍDA — CONTEÚDO PRONTO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -368
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "INÍCIO — GERAR CONTEÚDO": {
+      "main": [
+        [
+          {
+            "node": "BRIEF — TEMA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BRIEF — TEMA": {
+      "main": [
+        [
+          {
+            "node": "GEMINI — IA REAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GEMINI — IA REAL": {
+      "main": [
+        [
+          {
+            "node": "CONVERTER — CONTEÚDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONVERTER — CONTEÚDO": {
+      "main": [
+        [
+          {
+            "node": "QA — CONTEÚDO REAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QA — CONTEÚDO REAL": {
+      "main": [
+        [
+          {
+            "node": "SAÍDA — CONTEÚDO PRONTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d7c4b8f2-7e35-4c91-9f14-4c5e7b0a6d21",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}
