@@ -1,0 +1,351 @@
+import json, os, textwrap
+
+out = "/mnt/data/RUPTURA_ONE_CORE_v1_R0_N8N.json"
+
+def code_node(node_id, name, x, y, js):
+    return {
+        "parameters": {
+            "jsCode": js
+        },
+        "id": node_id,
+        "name": name,
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [x, y]
+    }
+
+nodes = [
+    {
+        "parameters": {},
+        "id": "manual-trigger-001",
+        "name": "INÍCIO — TESTE R$0",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [0, 0]
+    },
+    code_node(
+        "radar-002",
+        "RADAR — OPORTUNIDADES MOCK",
+        220, 0,
+        """const agora = new Date().toISOString();
+
+const oportunidades = [
+  {
+    titulo: 'Ferramenta simples que economiza tempo no dia a dia',
+    problema: 'Pessoas gastam tempo em uma tarefa repetitiva que pode ser simplificada.',
+    hook: 'Você ainda faz isso manualmente todos os dias?',
+    publico: 'Pessoas que querem economizar tempo',
+    potencial_viral: 84,
+    potencial_negocio: 82,
+    modelo_monetizacao: 'afiliado',
+    cta: 'Veja a solução indicada no perfil'
+  },
+  {
+    titulo: 'Erro comum que faz pequenas empresas perderem vendas',
+    problema: 'Um erro simples pode reduzir conversões e oportunidades.',
+    hook: 'Esse pequeno erro pode estar fazendo você perder vendas.',
+    publico: 'Pequenos negócios e empreendedores',
+    potencial_viral: 81,
+    potencial_negocio: 91,
+    modelo_monetizacao: 'servico',
+    cta: 'Veja o método completo no perfil'
+  },
+  {
+    titulo: 'Automação acessível para uma tarefa repetitiva',
+    problema: 'Uma tarefa repetitiva pode ser automatizada sem começar com ferramentas caras.',
+    hook: 'Pare de gastar seu tempo fazendo isso.',
+    publico: 'Profissionais e criadores',
+    potencial_viral: 79,
+    potencial_negocio: 88,
+    modelo_monetizacao: 'afiliado',
+    cta: 'Confira a ferramenta indicada no perfil'
+  },
+  {
+    titulo: 'Mudança de comportamento que gera curiosidade',
+    problema: 'Um comportamento cotidiano mudou e poucas pessoas perceberam.',
+    hook: 'Você percebeu que as pessoas começaram a fazer isso diferente?',
+    publico: 'Público geral',
+    potencial_viral: 86,
+    potencial_negocio: 70,
+    modelo_monetizacao: 'conteudo',
+    cta: 'Siga para acompanhar o próximo teste'
+  },
+  {
+    titulo: 'Produto útil para resolver uma dor específica',
+    problema: 'Existe uma dor prática que pode ser resolvida com uma solução simples.',
+    hook: 'Se você sofre com isso, veja esta solução antes de comprar qualquer coisa.',
+    publico: 'Consumidores buscando soluções práticas',
+    potencial_viral: 77,
+    potencial_negocio: 94,
+    modelo_monetizacao: 'afiliado',
+    cta: 'Veja a recomendação no perfil'
+  }
+];
+
+return oportunidades.map((o, i) => ({
+  json: {
+    ...o,
+    id_oportunidade: `OP-${Date.now()}-${i + 1}`,
+    origem: 'MOCK_R$0',
+    coletado_em: agora,
+    etapa: 'RADAR'
+  }
+}));"""
+    ),
+    code_node(
+        "score-003",
+        "PONTUAÇÃO — VIRAL + NEGÓCIO",
+        440, 0,
+        """const entradas = $input.all();
+
+return entradas.map((item) => {
+  const d = item.json;
+  const viral = Math.max(0, Math.min(100, Number(d.potencial_viral) || 0));
+  const negocio = Math.max(0, Math.min(100, Number(d.potencial_negocio) || 0));
+
+  const score = Math.round((viral * 0.45) + (negocio * 0.55));
+
+  return {
+    json: {
+      ...d,
+      viral_score: viral,
+      business_score: negocio,
+      score_total: score,
+      prioridade: score >= 90 ? 'A' : score >= 80 ? 'B' : 'C',
+      etapa: 'SCORE'
+    }
+  };
+});"""
+    ),
+    code_node(
+        "select-004",
+        "SELEÇÃO — MELHOR OPORTUNIDADE",
+        660, 0,
+        """const entradas = $input.all();
+if (entradas.length === 0) return [];
+
+const ordenadas = entradas
+  .map(i => i.json)
+  .sort((a, b) => Number(b.score_total || 0) - Number(a.score_total || 0));
+
+const melhor = ordenadas[0];
+
+return [{
+  json: {
+    ...melhor,
+    ranking: 1,
+    total_avaliadas: ordenadas.length,
+    decisao: 'SELECIONADA',
+    etapa: 'SELEÇÃO'
+  }
+}];"""
+    ),
+    code_node(
+        "strategy-005",
+        "ESTRATÉGIA — MONETIZAÇÃO",
+        880, 0,
+        """const entradas = $input.all();
+
+return entradas.map((item) => {
+  const d = item.json;
+  const modelo = d.modelo_monetizacao || 'conteudo';
+
+  const estrategia = modelo === 'afiliado'
+    ? 'Criar conteúdo de problema + demonstração/explicação + CTA para solução afiliada. Não inventar preço, benefício ou resultado.'
+    : modelo === 'servico'
+      ? 'Criar conteúdo mostrando o problema e a solução, com CTA para solicitar diagnóstico ou serviço.'
+      : 'Priorizar audiência, retenção e prova de interesse antes de monetizar.';
+
+  return {
+    json: {
+      ...d,
+      estrategia_monetizacao: estrategia,
+      objetivo_teste: modelo === 'conteudo'
+        ? 'medir retenção e interesse'
+        : 'medir intenção comercial',
+      etapa: 'ESTRATÉGIA'
+    }
+  };
+});"""
+    ),
+    code_node(
+        "script-006",
+        "ROTEIRO — V1",
+        1100, 0,
+        """const entradas = $input.all();
+
+return entradas.map((item) => {
+  const d = item.json;
+  const hook = d.hook || 'Você precisa ver isso antes de continuar.';
+  const publico = d.publico || 'público geral';
+  const cta = d.cta || 'Veja mais no perfil';
+
+  const roteiro = [
+    `GANCHO: ${hook}`,
+    `CONTEXTO: Se você faz parte de ${publico.toLowerCase()}, este problema merece atenção.`,
+    `PROBLEMA: ${d.problema}`,
+    `SOLUÇÃO: Mostre uma solução prática, objetiva e verificável para esse problema.`,
+    `PROVA: Use demonstração, exemplo ou fonte verificável antes de afirmar qualquer resultado.`,
+    `CTA: ${cta}.`
+  ].join('\\n');
+
+  return {
+    json: {
+      ...d,
+      roteiro: roteiro,
+      duracao_alvo_segundos: 35,
+      formato: 'vídeo curto vertical',
+      etapa: 'ROTEIRO'
+    }
+  };
+});"""
+    ),
+    code_node(
+        "qa-007",
+        "QA — SEGURANÇA E QUALIDADE",
+        1320, 0,
+        """const entradas = $input.all();
+
+return entradas.map((item) => {
+  const d = item.json;
+  const texto = String(d.roteiro || '');
+  const erros = [];
+
+  if (!texto.includes('GANCHO:')) erros.push('Sem gancho');
+  if (!texto.includes('CTA:')) erros.push('Sem CTA');
+  if (texto.length < 120) erros.push('Roteiro curto demais');
+
+  const aprovado = erros.length === 0;
+
+  return {
+    json: {
+      ...d,
+      qa: {
+        aprovado,
+        erros,
+        regra: 'Não publicar afirmações factuais não verificadas.'
+      },
+      etapa: 'QA'
+    }
+  };
+});"""
+    ),
+    code_node(
+        "content-008",
+        "PACOTE — CONTEÚDO",
+        1540, 0,
+        """const entradas = $input.all();
+
+return entradas
+  .filter(item => item.json.qa && item.json.qa.aprovado === true)
+  .map((item) => {
+    const d = item.json;
+
+    return {
+      json: {
+        id_oportunidade: d.id_oportunidade,
+        titulo: d.titulo,
+        hook: d.hook,
+        roteiro: d.roteiro,
+        formato: d.formato,
+        duracao_alvo_segundos: d.duracao_alvo_segundos,
+        cta: d.cta,
+        modelo_monetizacao: d.modelo_monetizacao,
+        score_total: d.score_total,
+        pacote_status: 'PRONTO_PARA_TESTE',
+        publicado: false,
+        modo: 'R$0 — SEM PUBLICAÇÃO AUTOMÁTICA',
+        etapa: 'PACOTE'
+      }
+    };
+  });"""
+    ),
+    code_node(
+        "test-009",
+        "TESTE — RESULTADO SIMULADO",
+        1760, 0,
+        """const entradas = $input.all();
+
+return entradas.map((item) => {
+  const d = item.json;
+
+  return {
+    json: {
+      ...d,
+      teste: {
+        status: 'SIMULADO',
+        alcance: 0,
+        visualizacoes: 0,
+        cliques: 0,
+        conversoes: 0,
+        receita: 0,
+        observacao: 'Sem publicação real e sem dados externos. Este resultado não representa vendas.'
+      },
+      etapa: 'TESTE'
+    }
+  };
+});"""
+    ),
+    code_node(
+        "report-010",
+        "RELATÓRIO — CICLO",
+        1980, 0,
+        """const entradas = $input.all();
+
+return entradas.map((item) => {
+  const d = item.json;
+
+  return {
+    json: {
+      projeto: 'RUPTURA ONE',
+      ciclo: 'MVP R$0',
+      status: 'OK — NÚCLEO FUNCIONAL',
+      oportunidade: d.titulo,
+      score_total: d.score_total,
+      prioridade: d.prioridade,
+      pacote_status: d.pacote_status,
+      teste_status: d.teste?.status || 'N/A',
+      proximo_upgrade: 'Conectar fontes reais + IA gratuita disponível + canal de publicação + coleta de métricas reais.',
+      aviso: 'O MVP não promete lucro nem publica automaticamente. Ele valida o motor antes das integrações reais.',
+      etapa: 'RELATÓRIO'
+    }
+  };
+});"""
+    )
+]
+
+connections = {}
+chain = [n["name"] for n in nodes]
+for a, b in zip(chain, chain[1:]):
+    connections[a] = {"main": [[{"node": b, "type": "main", "index": 0}]]}
+
+workflow = {
+    "name": "RUPTURA ONE — CORE v1 — MVP R$0",
+    "nodes": nodes,
+    "pinData": {},
+    "connections": connections,
+    "active": False,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "ruptura-one-core-v1-r0",
+    "meta": {
+        "templateCredsSetupCompleted": True,
+        "description": "Núcleo R$0 do RUPTURA ONE: radar mock, scoring, seleção, estratégia, roteiro, QA, pacote e teste simulado. Sem credenciais, sem APIs pagas e sem publicação automática."
+    },
+    "tags": []
+}
+
+with open(out, "w", encoding="utf-8") as f:
+    json.dump(workflow, f, ensure_ascii=False, indent=2)
+
+# Validate by parsing it back and checking the graph.
+with open(out, "r", encoding="utf-8") as f:
+    check = json.load(f)
+
+assert len(check["nodes"]) == 10
+assert len(check["connections"]) == 9
+assert check["nodes"][0]["type"] == "n8n-nodes-base.manualTrigger"
+
+print(f"Arquivo criado e validado: {out}")
+print(f"Nós: {len(check['nodes'])} | Conexões: {len(check['connections'])}")
