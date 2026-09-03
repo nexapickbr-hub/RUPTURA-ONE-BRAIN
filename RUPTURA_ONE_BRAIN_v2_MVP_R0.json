@@ -1,0 +1,218 @@
+{
+  "name": "RUPTURA ONE — BRAIN v2 — MVP R$0",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "b8caacd2-a7f2-4e2a-89ac-2584863c33dd",
+      "name": "GATILHO — RADAR A CADA 6H",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const oportunidades = [\n  {\n    titulo: 'Tecnologia que está mudando uma tarefa comum',\n    relevancia: 'Mudanças tecnológicas em tarefas do dia a dia despertam curiosidade e podem gerar conteúdo educativo.',\n    hook: 'Você ainda faz isso do jeito antigo?',\n    angulo: 'Mostrar a mudança de forma simples e prática.',\n    publico: 'Público geral interessado em tecnologia e praticidade.',\n    potencial_viral: 78,\n    potencial_negocio: 72,\n    riscos: 'Confirmar dados antes da publicação.'\n  },\n  {\n    titulo: 'Um erro simples que faz as pessoas perderem tempo',\n    relevancia: 'Problemas cotidianos têm forte potencial de identificação e compartilhamento.',\n    hook: 'Esse pequeno erro pode estar roubando seu tempo todos os dias.',\n    angulo: 'Apresentar o erro e uma solução prática.',\n    publico: 'Pessoas interessadas em produtividade.',\n    potencial_viral: 84,\n    potencial_negocio: 76,\n    riscos: 'Evitar promessas exageradas.'\n  },\n  {\n    titulo: 'Uma mudança de comportamento que quase ninguém percebeu',\n    relevancia: 'Mudanças de comportamento geram curiosidade e discussão.',\n    hook: 'Você percebeu que as pessoas começaram a fazer isso diferente?',\n    angulo: 'Explicar a mudança através de exemplos cotidianos.',\n    publico: 'Público geral.',\n    potencial_viral: 82,\n    potencial_negocio: 68,\n    riscos: 'Precisará de fontes para comprovar a mudança.'\n  },\n  {\n    titulo: 'A curiosidade por trás de um objeto que usamos todos os dias',\n    relevancia: 'Curiosidades sobre objetos comuns possuem alto potencial de retenção.',\n    hook: 'Você usa isso todos os dias, mas provavelmente nunca percebeu este detalhe.',\n    angulo: 'Revelar uma informação surpreendente e fácil de entender.',\n    publico: 'Público amplo.',\n    potencial_viral: 88,\n    potencial_negocio: 64,\n    riscos: 'Verificar a origem da informação.'\n  },\n  {\n    titulo: 'Uma oportunidade prática para pequenos negócios',\n    relevancia: 'Conteúdo com aplicação comercial pode gerar audiência e monetização.',\n    hook: 'Pequenos negócios podem estar ignorando esta oportunidade.',\n    angulo: 'Transformar uma tendência em uma ação simples para empresas.',\n    publico: 'Empreendedores e pequenos negócios.',\n    potencial_viral: 74,\n    potencial_negocio: 91,\n    riscos: 'Evitar prometer resultados financeiros garantidos.'\n  }\n];\n\nconst runId = `RUP-${Date.now()}`;\n\nreturn oportunidades.map((o, i) => ({\n  json: {\n    ...o,\n    id_oportunidade: `${runId}-${i + 1}`,\n    projeto: 'RUPTURA ONE',\n    modo: 'MVP_R$0',\n    etapa: 'RADAR',\n    criado_em: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "7618438b-b2e1-4c91-9fbf-e7cc24aeed34",
+      "name": "RADAR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const viral = Math.max(0, Math.min(100, Number(o.potencial_viral) || 0));\n  const curiosidade = viral >= 85 ? 10 : viral >= 75 ? 7 : 5;\n  const compartilhamento = viral >= 80 ? 10 : 7;\n  const retencao = viral >= 80 ? 10 : 7;\n  const score = Math.round((viral * 0.55) + (curiosidade * 2) + (compartilhamento * 2) + (retencao * 2));\n\n  return {\n    json: {\n      ...o,\n      viral_score: Math.min(100, score),\n      componentes_viral: { viral, curiosidade, compartilhamento, retencao },\n      etapa: 'VIRAL SCORE'\n    }\n  };\n});"
+      },
+      "id": "651c9e55-4798-4092-ac17-600fbec3d420",
+      "name": "VIRAL SCORE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const viral = Math.max(0, Math.min(100, Number(o.viral_score) || 0));\n  const negocio = Math.max(0, Math.min(100, Number(o.potencial_negocio) || 0));\n  const finalScore = Math.round((viral * 0.65) + (negocio * 0.35));\n\n  return {\n    json: {\n      ...o,\n      business_score: negocio,\n      final_score: finalScore,\n      prioridade: finalScore >= 85 ? 'ALTA' : finalScore >= 70 ? 'MEDIA' : 'BAIXA',\n      etapa: 'BUSINESS SCORE'\n    }\n  };\n});"
+      },
+      "id": "8feae31f-dfa7-4527-a173-0d0bc62edc1c",
+      "name": "BUSINESS SCORE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ordenados = [...items].sort((a, b) => Number(b.json.final_score || 0) - Number(a.json.final_score || 0));\nif (!ordenados.length) return [];\n\nconst selecionado = ordenados[0].json;\n\nreturn [{\n  json: {\n    ...selecionado,\n    selecao: {\n      quantidade_recebida: items.length,\n      criterio: 'maior final_score',\n      ranking: ordenados.map((x, i) => ({\n        posicao: i + 1,\n        id_oportunidade: x.json.id_oportunidade,\n        final_score: x.json.final_score\n      }))\n    },\n    fact_check_status: 'APROVADO_MOCK',\n    aprovado_para_publicacao: true,\n    fontes: [],\n    observacao: 'MVP R$0: fact-check externo ainda não conectado. Esta aprovação permite apenas o teste da pipeline e da publicação MOCK.',\n    etapa: 'FACT-CHECK'\n  }\n}];"
+      },
+      "id": "6e8c0dc1-d22b-42dd-ab9c-4109e384a8a9",
+      "name": "FACT-CHECK — MOCK R$0",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const hook = String(o.hook || '').trim();\n  const relevancia = String(o.relevancia || '').trim();\n  const angulo = String(o.angulo || '').trim();\n  const roteiro = [\n    `HOOK: ${hook}`,\n    `CONTEXTO: ${relevancia}`,\n    `DESENVOLVIMENTO: ${angulo}`,\n    'VALOR: Explique o ponto principal de forma simples, objetiva e útil.',\n    'CTA: Se isso foi útil, salve e compartilhe.'\n  ].join('\\n\\n');\n\n  return {\n    json: {\n      ...o,\n      roteiro,\n      formato: 'Vídeo curto vertical 9:16',\n      duracao_alvo_segundos: 35,\n      etapa: 'ROTEIRISTA'\n    }\n  };\n});"
+      },
+      "id": "866555a6-c843-4b81-a727-2c3d02a5da87",
+      "name": "ROTEIRISTA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  return {\n    json: {\n      ...o,\n      direcao: {\n        abertura: 'Começar com texto grande na tela e corte rápido.',\n        cena_1: 'Apresentar visualmente o problema ou curiosidade.',\n        cena_2: 'Mostrar a explicação principal com elementos visuais simples.',\n        cena_3: 'Destacar a conclusão ou solução.',\n        edicao: 'Cortes rápidos, legendas, zooms discretos e mudança visual a cada poucos segundos.',\n        audio: 'Narração clara e música de fundo discreta.'\n      },\n      etapa: 'DIRETOR'\n    }\n  };\n});"
+      },
+      "id": "e9cf3c5d-2f6a-47ec-b51e-5fc02e8e853f",
+      "name": "DIRETOR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const o = item.json;\n  const motivos = [];\n  if (o.aprovado_para_publicacao !== true) motivos.push('Fact-check não aprovado.');\n  if (!o.hook || String(o.hook).trim().length < 10) motivos.push('Hook ausente ou curto.');\n  if (!o.roteiro || String(o.roteiro).length < 80) motivos.push('Roteiro insuficiente.');\n  if (!o.direcao || !o.direcao.abertura) motivos.push('Direção visual incompleta.');\n\n  const aprovado = motivos.length === 0;\n\n  return {\n    json: {\n      ...o,\n      qa_estrategico: {\n        aprovado,\n        motivos\n      },\n      etapa: 'QA ESTRATÉGICO',\n      status: aprovado ? 'APROVADO' : 'BLOQUEADO'\n    }\n  };\n});"
+      },
+      "id": "e542b834-f4e6-4794-bd68-4b3688d71c46",
+      "name": "QA ESTRATÉGICO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(item => item.json.qa_estrategico?.aprovado === true).map(item => ({\n  json: {\n    ...item.json,\n    growth: {\n      objetivo: 'Testar conteúdo, medir resultado e alimentar o próximo ciclo.',\n      plataformas: ['TikTok', 'Instagram Reels', 'YouTube Shorts'],\n      metricas: ['retenção', 'visualizações', 'compartilhamentos', 'salvamentos', 'comentários', 'conversão'],\n      testes: ['Hook A', 'Hook B', 'CTA A'],\n      regra_mvp: 'Após os primeiros 10 conteúdos, comparar resultados e ajustar os pesos do cérebro.'\n    },\n    etapa: 'GROWTH'\n  }\n}));"
+      },
+      "id": "dd51ed9d-5861-4bbb-bf2c-a2367b96382d",
+      "name": "GROWTH",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const d = item.json;\n  const titulo = String(d.titulo || 'Conteúdo RUPTURA ONE').trim();\n  const gancho = String(d.hook || d.gancho || `Você sabia que ${titulo.toLowerCase()}?`).trim();\n  const publico = String(d.publico || 'público interessado no tema').trim();\n  const angulo = String(d.angulo || 'solução prática').trim();\n\n  return {\n    json: {\n      ...d,\n      agente: 'GERADOR DE CONTEÚDO',\n      conteudo: {\n        titulo,\n        gancho,\n        desenvolvimento: `Apresente o problema com clareza, explique o ponto principal e entregue uma solução prática. Ângulo: ${angulo}.`,\n        publico,\n        cta: 'Siga para mais conteúdos e confira a próxima dica.'\n      },\n      status: 'gerado',\n      etapa: 'GERADOR DE CONTEÚDO'\n    }\n  };\n});"
+      },
+      "id": "76eb70b9-b420-47ff-a45b-c85ceb346509",
+      "name": "GERADOR DE CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const d = item.json;\n  const c = d.conteudo || {};\n  const partes = [c.gancho, c.desenvolvimento, c.cta].filter(v => String(v || '').trim());\n  const roteiroFinal = partes.join('\\n\\n');\n\n  return {\n    json: {\n      ...d,\n      roteiro_final: roteiroFinal,\n      duracao_alvo_segundos: 35,\n      formato: 'video_vertical_9x16',\n      status: 'roteiro_pronto',\n      etapa: 'ROTEIRO FINAL'\n    }\n  };\n});"
+      },
+      "id": "1ef812a3-ca15-49b1-bbe5-666bfee03a27",
+      "name": "ROTEIRO FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const d = item.json;\n  const erros = [];\n  if (!String(d.roteiro_final || '').trim()) erros.push('Roteiro vazio.');\n  if (String(d.roteiro_final || '').length < 40) erros.push('Roteiro muito curto.');\n  if (!String(d.titulo || '').trim()) erros.push('Título ausente.');\n  if (!String(d.conteudo?.cta || '').trim()) erros.push('CTA ausente.');\n  if (d.qa_estrategico?.aprovado !== true) erros.push('QA estratégico não aprovado.');\n\n  const aprovado = erros.length === 0;\n\n  return {\n    json: {\n      ...d,\n      qa_conteudo: {\n        aprovado,\n        erros\n      },\n      status: aprovado ? 'APROVADO_PARA_PUBLICACAO' : 'BLOQUEADO',\n      etapa: 'QA — CONTEÚDO'\n    }\n  };\n});"
+      },
+      "id": "9e8524b1-de1d-42fe-9be2-668bab002f30",
+      "name": "QA — CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(item => item.json.qa_conteudo?.aprovado === true).map(item => {\n  const d = item.json;\n  return {\n    json: {\n      ...d,\n      publicacao: {\n        plataforma: 'TikTok',\n        formato: '9:16',\n        legenda: `${d.titulo || ''}\\n\\n${d.conteudo?.cta || ''}`.trim(),\n        roteiro: d.roteiro_final || '',\n        modo: 'MOCK_R$0',\n        status: 'fila'\n      },\n      etapa: 'PACOTE DE PUBLICAÇÃO'\n    }\n  };\n});"
+      },
+      "id": "e6eef144-db7c-4ab7-acd2-762f07d4ce7e",
+      "name": "PACOTE DE PUBLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2880, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const d = item.json;\n  return {\n    json: {\n      ...d,\n      publicacao: {\n        ...d.publicacao,\n        modo: 'MOCK_R$0',\n        publicado: true,\n        resultado: 'SIMULADO_COM_SUCESSO',\n        id_publicacao_mock: `MOCK-${Date.now()}`\n      },\n      etapa: 'PUBLICAÇÃO MOCK'\n    }\n  };\n});"
+      },
+      "id": "mock-publicacao-0001",
+      "name": "PUBLICAÇÃO — MOCK R$0",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3120, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const d = item.json;\n  return {\n    json: {\n      projeto: d.projeto || 'RUPTURA ONE',\n      id_oportunidade: d.id_oportunidade,\n      id_publicacao_mock: d.publicacao?.id_publicacao_mock || null,\n      titulo: d.titulo,\n      final_score: d.final_score,\n      prioridade: d.prioridade,\n      qa_estrategico: d.qa_estrategico,\n      qa_conteudo: d.qa_conteudo,\n      publicacao: d.publicacao,\n      registro: {\n        plataforma: 'TikTok',\n        etapa: 'REGISTRO',\n        modo: 'MOCK_R$0',\n        timestamp: new Date().toISOString(),\n        resultado: 'REGISTRADO_COM_SUCESSO'\n      }\n    }\n  };\n});"
+      },
+      "id": "950c429f-e016-4176-b96c-948b34309503",
+      "name": "REGISTRO — PUBLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3360, 0]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GATILHO — RADAR A CADA 6H": {
+      "main": [[{"node": "RADAR", "type": "main", "index": 0}]]
+    },
+    "RADAR": {
+      "main": [[{"node": "VIRAL SCORE", "type": "main", "index": 0}]]
+    },
+    "VIRAL SCORE": {
+      "main": [[{"node": "BUSINESS SCORE", "type": "main", "index": 0}]]
+    },
+    "BUSINESS SCORE": {
+      "main": [[{"node": "FACT-CHECK — MOCK R$0", "type": "main", "index": 0}]]
+    },
+    "FACT-CHECK — MOCK R$0": {
+      "main": [[{"node": "ROTEIRISTA", "type": "main", "index": 0}]]
+    },
+    "ROTEIRISTA": {
+      "main": [[{"node": "DIRETOR", "type": "main", "index": 0}]]
+    },
+    "DIRETOR": {
+      "main": [[{"node": "QA ESTRATÉGICO", "type": "main", "index": 0}]]
+    },
+    "QA ESTRATÉGICO": {
+      "main": [[{"node": "GROWTH", "type": "main", "index": 0}]]
+    },
+    "GROWTH": {
+      "main": [[{"node": "GERADOR DE CONTEÚDO", "type": "main", "index": 0}]]
+    },
+    "GERADOR DE CONTEÚDO": {
+      "main": [[{"node": "ROTEIRO FINAL", "type": "main", "index": 0}]]
+    },
+    "ROTEIRO FINAL": {
+      "main": [[{"node": "QA — CONTEÚDO", "type": "main", "index": 0}]]
+    },
+    "QA — CONTEÚDO": {
+      "main": [[{"node": "PACOTE DE PUBLICAÇÃO", "type": "main", "index": 0}]]
+    },
+    "PACOTE DE PUBLICAÇÃO": {
+      "main": [[{"node": "PUBLICAÇÃO — MOCK R$0", "type": "main", "index": 0}]]
+    },
+    "PUBLICAÇÃO — MOCK R$0": {
+      "main": [[{"node": "REGISTRO — PUBLICAÇÃO", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ruputura-one-v2-mvp-r0",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}
