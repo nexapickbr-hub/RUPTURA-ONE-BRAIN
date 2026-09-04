@@ -1,0 +1,3089 @@
+{
+  "name": "RUPTURA ONE — BRAIN v20 REAL PRODUÇÃO",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "2a982350-f21b-4b54-9caa-babdbbdca7c9",
+      "name": "01 — INÍCIO MANUAL",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "e2f4b965-e8b5-43d5-8e2a-1a0a57e6026f",
+      "name": "02 — CICLO A CADA 6H",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now=new Date().toISOString();\nreturn [{json:{\n  ciclo_id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,\n  iniciado_em:now,\n  nicho:'tecnologia, IA, oportunidades digitais, produtos úteis e negócios online',\n  idioma:'pt-BR',\n  cloudinary_cloud_name:'',\n  cloudinary_upload_preset:'',\n  instagram_user_id:'',\n  facebook_page_id:'',\n  pinterest_board_id:'',\n  pinterest_cover_url:'',\n  publish:{tiktok:true,instagram:true,youtube:true,facebook:true,pinterest:true},\n  production_mode:'production',\n  dry_run:false,\n  kill_switch:false,\n  circuit_breaker:false,\n  apice_revision:'V20-APICE-MASTER-4',\n  metrics:{enabled:true,interval_hours:6,feedback_loop:true,providers:{youtube:true,tiktok:true,instagram:'planned',facebook:'planned',pinterest:'planned'},min_public_age_hours:0},\n  youtube_privacy:'public',\n  youtube_api_project_audited:false,\n  reconciliation_required_on_unknown:true,\n  publication_ledger_version:'V20-APICE-LEDGER-1',\n  tiktok_url_prefix_verified:false,\n  tiktok_user_consent:false,\n  tiktok_privacy:'PUBLIC_TO_EVERYONE',\n  video:{provider:'creatomate',seconds:12,width:720,height:1280},\n  media:{gerar_imagem:true,gerar_narracao:true,voice:'alloy',image_model:'gpt-image-2'},\n  regras:{\n    aigc:true,\n    sem_segredos_no_json:true,\n    sem_bypass_api:true,\n    fail_fast:true,\n    nao_publicar_se_config_invalida:true,\n    nao_publicar_sem_status_final:true,\n    nao_repetir_publicacao:true,\n    publicacao_opt_in:true,\n    dry_run_padrao:false,\n    kill_switch_padrao:false,\n    circuit_breaker_padrao:false\n  }\n}}];",
+        "dry_run": false,
+        "publish_youtube": true,
+        "publish_tiktok": true,
+        "publish_instagram": true,
+        "publish_facebook": true,
+        "production_mode": "production"
+      },
+      "id": "62660131-1038-4251-8e53-a2fc597cf99e",
+      "name": "03 — CONFIGURAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=IA+tecnologia+quando%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419",
+        "options": {}
+      },
+      "id": "6197b578-43a4-444e-a8f1-9fb9e52f47e0",
+      "name": "04.1 — RADAR IA",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        -80
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=negócios+renda+digital+quando%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419",
+        "options": {}
+      },
+      "id": "832dacc8-2070-4de5-ad49-b3a21c44745b",
+      "name": "04.2 — RADAR NEGÓCIOS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        80
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=produtos+viral+ecommerce+quando%3A1d&hl=pt-BR&gl=BR&ceid=BR%3Apt-419",
+        "options": {}
+      },
+      "id": "08483c8f-2a1f-4aec-8bb6-b7ac6b54d5e8",
+      "name": "04.3 — RADAR PRODUTOS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        240
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "67f93455-7e29-4f72-a177-e18089debf7e",
+      "name": "05 — UNIFICAR RADAR",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        760,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const seen=new Set(); const out=[]; for(const it of $input.all()){const j=it.json||{}; const title=String(j.title||'').trim(); const link=String(j.link||'').trim(); if(!title||!link||seen.has(link)) continue; seen.add(link); out.push({json:{title,link,description:String(j.contentSnippet||j.content||j.description||'').slice(0,1200),published:j.pubDate||j.isoDate||'',source:'Google News'}});} out.sort((a,b)=>new Date(b.json.published||0)-new Date(a.json.published||0)); return out.slice(0,15);"
+      },
+      "id": "35829a9d-8485-4c8e-8eca-4c091a49949d",
+      "name": "06 — LIMPAR / DEDUPLICAR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base=$('03 — CONFIGURAÇÃO').first().json;\nconst s=getWorkflowStaticData('global');\nconst aprendizado=s.aprendizado||{};\nconst temas=Object.entries(aprendizado.temas||{})\n  .sort((a,b)=>(b[1].score_medio||0)-(a[1].score_medio||0))\n  .slice(0,10)\n  .map(([tema,v])=>({tema,score_medio:v.score_medio||0,amostras:v.amostras||0,engagement_medio:v.engagement_medio||0}));\nreturn [{json:{\n  ...base,\n  noticias:$input.all().map(x=>x.json),\n  aprendizado:{temas,ultimos:s.metricas||[]}\n}}];"
+      },
+      "id": "dea0c00b-ba79-43f9-8c3f-ff9ce74c5ed6",
+      "name": "07 — BRIEFING",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({model:'gpt-5.6-sol',store:false,reasoning:{effort:'max'},tools:[{type:'web_search'}],input:'Você é o cérebro estratégico do RUPTURA ONE. Analise as notícias reais abaixo usando busca na web quando necessário para verificar fatos, datas e contexto. Escolha UMA oportunidade com alto potencial de alcance e monetização. Use o APRENDIZADO DOS CICLOS ANTERIORES para priorizar temas com melhor desempenho, sem repetir automaticamente conteúdo já publicado. Não invente fatos. Diferencie fato confirmado de hipótese. Se fontes divergirem, prefira fontes primárias e recentes e reduza a confiança. Não faça alegações médicas, financeiras, legais ou de segurança como certeza sem fonte primária adequada. Não copie texto protegido; transforme a informação em conteúdo original. Não imite pessoas reais nem atribua declarações que não estejam comprovadas. Crie conteúdo original em português do Brasil. Cada item de fontes deve ser uma URL HTTPS real consultada na busca. Entregue SOMENTE o JSON solicitado. Nicho: '+$json.nicho+'\nNOTÍCIAS: '+JSON.stringify($json.noticias),text:{format:{type:'json_schema',name:'ruptura_content',strict:true,schema:{type:'object',properties:{tema:{type:'string'},angulo:{type:'string'},titulo:{type:'string'},gancho:{type:'string'},roteiro:{type:'string'},legenda:{type:'string'},cta:{type:'string'},hashtags:{type:'array',items:{type:'string'}},ideia_visual:{type:'string'},video_prompt:{type:'string'},duracao_segundos:{type:'integer'},score_viral:{type:'number'},score_negocio:{type:'number'},score_total:{type:'number'},fontes:{type:'array',items:{type:'string'}}},required:['tema','angulo','titulo','gancho','roteiro','legenda','cta','hashtags','ideia_visual','video_prompt','duracao_segundos','score_viral','score_negocio','score_total','fontes'],additionalProperties:false}}}})}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "45f1e4e9-a04e-4751-bb69-fbd43a19fdc5",
+      "name": "08 — IA — ESTRATÉGIA + CONTEÚDO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1480,
+        80
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "RUPTURA_OPENAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$json;\nlet t=r.output_text||r.outputText||r.text;\nif(!t&&Array.isArray(r.output)){\n  for(const o of r.output){\n    for(const c of (o.content||[])){\n      if(typeof c.text==='string') t=(t||'')+c.text;\n    }\n  }\n}\nif(!t) throw new Error('OpenAI não retornou conteúdo.');\nt=String(t).trim().replace(/^```(?:json)?\\s*/i,'').replace(/\\s*```$/,'');\nconst a=t.indexOf('{'), b=t.lastIndexOf('}');\nif(a<0||b<=a) throw new Error('OpenAI não retornou JSON válido.');\nlet c;\ntry{ c=JSON.parse(t.slice(a,b+1)); }catch(e){ throw new Error('JSON da IA inválido.'); }\n\nconst required=['tema','angulo','titulo','gancho','roteiro','legenda','cta','hashtags','ideia_visual','video_prompt','duracao_segundos','score_viral','score_negocio','score_total','fontes'];\nconst miss=required.filter(k=>c[k]===undefined||c[k]===null||c[k]==='');\nif(miss.length) throw new Error('QA bloqueou: '+miss.join(', '));\n\nif(!Array.isArray(c.hashtags)) throw new Error('QA bloqueou: hashtags inválidas');\nc.hashtags=c.hashtags.map(x=>String(x).trim()).filter(Boolean).slice(0,30);\nif(c.hashtags.length<1) throw new Error('QA bloqueou: hashtags vazias');\n\nif(!Array.isArray(c.fontes)) throw new Error('QA bloqueou: fontes inválidas');\nc.fontes=c.fontes.map(x=>String(x).trim()).filter(Boolean);\nif(c.fontes.length<1||c.fontes.some(u=>!/^https:\\/\\//i.test(u))) throw new Error('QA bloqueou: fonte não é URL HTTPS');\n\nif(String(c.gancho).trim().length<15) throw new Error('QA bloqueou: gancho curto');\nif(String(c.roteiro).trim().length<120) throw new Error('QA bloqueou: roteiro curto');\n\nfor(const k of ['score_viral','score_negocio','score_total']){\n  const v=Number(c[k]);\n  if(!Number.isFinite(v)||v<0||v>100) throw new Error('QA bloqueou: '+k+' fora de 0–100');\n}\nconst expected=(Number(c.score_viral)+Number(c.score_negocio))/2;\nif(Math.abs(Number(c.score_total)-expected)>20) throw new Error('QA bloqueou: score_total inconsistente');\n\nconst dur=Number(c.duracao_segundos);\nif(!Number.isFinite(dur)||dur<4||dur>12) throw new Error('QA bloqueou: duração fora de 4–12 s');\n\nconst base=$('07 — BRIEFING').first().json;\nreturn [{json:{...base,conteudo:c,qa_aprovado:true}}];"
+      },
+      "id": "37477c9d-2028-4b2d-9f74-cfc717204f5a",
+      "name": "09 — QA CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({model:$json.media?.image_model||'gpt-image-2',prompt:String($json.conteudo.ideia_visual||$json.conteudo.video_prompt).slice(0,8000),size:'1024x1536',quality:'high',n:1,output_format:'jpeg',moderation:'auto'})}}",
+        "options": {
+          "timeout": 300000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 7000
+        }
+      },
+      "id": "18915a0a-2a91-4e9d-86a9-cebbdde2562d",
+      "name": "10.1 — GERAR IMAGEM IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1960,
+        -180
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "RUPTURA_OPENAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b=$json.data?.[0]?.b64_json;\nif(!b) throw new Error('OpenAI Image não retornou b64_json.');\nconst base=$('09A — COMPLIANCE / SEGURANÇA').first().json;\nconst bin=await this.helpers.prepareBinaryData(Buffer.from(b,'base64'),'ruptura-scene.jpg','image/jpeg');\nreturn [{json:{...base},binary:{data:bin}}];"
+      },
+      "id": "425231ff-6f6d-4695-86a8-0b49a9a7037b",
+      "name": "10.2 — IMAGEM IA → BINÁRIO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.cloudinary.com/v1_1/{{$json.cloudinary_cloud_name}}/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "upload_preset",
+              "value": "={{$json.cloudinary_upload_preset}}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "c518ee55-6e39-4c89-a0f2-1ef45d53f5a9",
+      "name": "10.3 — HOSPEDAR IMAGEM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2440,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$json; const base=$('10.2 — IMAGEM IA → BINÁRIO').first().json; const image_url=r.secure_url||r.url; if(!image_url||!/^https:\\/\\//i.test(image_url)) throw new Error('Imagem pública ausente após upload.'); return [{json:{...base,image_url},binary:undefined}];"
+      },
+      "id": "3f569599-43f1-4254-9822-51f0f232120a",
+      "name": "10.3A — RESTAURAR DADOS IMAGEM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2680,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/speech",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({model:'gpt-4o-mini-tts',voice:$json.media?.voice||'alloy',input:String($json.conteudo.roteiro).slice(0,1600),response_format:'mp3'})}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 180000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 7000
+        }
+      },
+      "id": "0f429708-5d85-43f7-9d8b-f551978e3dcc",
+      "name": "10.4 — GERAR NARRAÇÃO IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2680,
+        -180
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "RUPTURA_OPENAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item=$input.first(); const base=$('10.3A — RESTAURAR DADOS IMAGEM').first().json; if(!item.binary?.data) throw new Error('Narração não chegou como binário.'); item.json={...base}; return item;"
+      },
+      "id": "8e41e0d6-8ebd-4f9f-87b7-23a9c81ca9de",
+      "name": "10.5 — RESTAURAR DADOS MEDIA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2920,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.cloudinary.com/v1_1/{{$json.cloudinary_cloud_name}}/video/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "upload_preset",
+              "value": "={{$json.cloudinary_upload_preset}}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "b8e97330-ce77-4451-a6e0-5b9785fd4e6a",
+      "name": "10.6 — HOSPEDAR NARRAÇÃO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3160,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base=$('10.5 — RESTAURAR DADOS MEDIA').first().json; const audio=$json.secure_url||$json.url; if(!base.image_url||!/^https:\\/\\//i.test(base.image_url)) throw new Error('Imagem pública ausente.'); if(!audio||!/^https:\\/\\//i.test(audio)) throw new Error('Narração pública ausente.'); return [{json:{...base,audio_url:audio}}];"
+      },
+      "id": "0db00a05-996f-42f5-b0f6-a4a2a851d756",
+      "name": "10.7 — PREPARAR RENDER FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.creatomate.com/v2/renders",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify((()=>{const d=Math.max(4,Math.min(12,Number($json.conteudo?.duracao_segundos||$json.video?.seconds||12))); const t1=Math.min(1.5,d*0.25); const t2=Math.min(2.0,d*0.35); const ctaDur=Math.min(1.5,d*0.25); const ctaStart=Math.max(0,d-ctaDur); const bodyStart=Math.min(Math.max(t1*0.8,0.5),Math.max(0,d-1)); const bodyDur=Math.max(0.5,ctaStart-bodyStart); return {output_format:'mp4',width:Number($json.video?.width||720),height:Number($json.video?.height||1280),duration:d,snapshot_time:Math.min(1,d),elements:[{type:'image',source:$json.image_url,track:1,time:0,duration:d,width:'100%',height:'100%',fit:'cover'},{type:'audio',source:$json.audio_url,track:2,time:0,duration:d,trim_start:0,trim_duration:d,volume:'100%'},{type:'text',text:String($json.conteudo.titulo).slice(0,100),track:3,time:0,duration:t1,width:'86%',height:'18%',x:'7%',y:'8%',font_family:'Inter',font_weight:'800',font_size:'8 vmin',line_height:'105%',fill_color:'rgba(255,255,255,1)',x_alignment:'50%',y_alignment:'50%'},{type:'text',text:String($json.conteudo.gancho).slice(0,180),track:3,time:Math.min(t1*0.75,Math.max(0,d-t2)),duration:t2,width:'86%',height:'28%',x:'7%',y:'34%',font_family:'Inter',font_weight:'700',font_size:'6 vmin',line_height:'110%',fill_color:'rgba(255,220,80,1)',x_alignment:'50%',y_alignment:'50%'},{type:'text',text:String($json.conteudo.roteiro).slice(0,420),track:3,time:bodyStart,duration:bodyDur,width:'86%',height:'60%',x:'7%',y:'20%',font_family:'Inter',font_weight:'600',font_size:'5 vmin',line_height:'115%',fill_color:'rgba(255,255,255,1)',x_alignment:'50%',y_alignment:'50%'},{type:'text',text:String($json.conteudo.cta).slice(0,160),track:3,time:ctaStart,duration:ctaDur,width:'86%',height:'25%',x:'7%',y:'65%',font_family:'Inter',font_weight:'800',font_size:'7 vmin',line_height:'105%',fill_color:'rgba(255,220,80,1)',x_alignment:'50%',y_alignment:'50%'}]};})())}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "641e8c88-615e-4dfd-bce8-9c497b735ba6",
+      "name": "10 — VÍDEO — CREATOMATE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3640,
+        80
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_CREATOMATE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "ae20bc23-e1fa-46d6-9b01-6c4635059df9",
+      "name": "11 — AGUARDAR VÍDEO",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.creatomate.com/v2/renders/{{$json.id}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "192b0e34-d19c-4b27-a662-013964f80360",
+      "name": "12 — STATUS CREATOMATE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2440,
+        80
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_CREATOMATE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "if($json.status!=='succeeded') throw new Error('Creatomate não concluiu o vídeo nesta tentativa. Status: '+String($json.status||'desconhecido')); const u=$json.url; if(!u||!/^https:\\/\\//i.test(u)) throw new Error('Creatomate não retornou URL HTTPS do vídeo.'); return [{json:{...$('09 — QA CONTEÚDO').first().json,video_job_id:$json.id,video_render_url:u}}];"
+      },
+      "id": "fa2cc666-8562-43d4-92ca-f458d8ade3cf",
+      "name": "13 — VALIDAR VÍDEO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2680,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$json.video_render_url}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "59b9db6c-018e-4401-b149-48fa87319d33",
+      "name": "14 — BAIXAR MP4",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2920,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item=$input.first(); item.json=$('13 — VALIDAR VÍDEO').first().json; if(!item.binary?.data) throw new Error('MP4 não chegou ao workflow'); return item;"
+      },
+      "id": "f1df12b2-3fbd-4d74-9748-4fcd5634e5a9",
+      "name": "15 — RESTAURAR DADOS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3160,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.cloudinary.com/v1_1/{{$json.cloudinary_cloud_name}}/video/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "upload_preset",
+              "value": "={{$json.cloudinary_upload_preset}}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "aba322e2-c873-4b33-a5be-80d126ee9846",
+      "name": "16 — HOSPEDAR MP4 PUBLICAMENTE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3400,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base=$('15 — RESTAURAR DADOS').first().json;\nconst url=$json.secure_url||$json.url;\nif(!url||!/^https:\\/\\//i.test(String(url))) throw new Error('Hospedagem não retornou URL HTTPS pública');\nif($json.resource_type && $json.resource_type!=='video') throw new Error('Cloudinary não retornou resource_type=video');\nif($json.format && String($json.format).toLowerCase()!=='mp4') throw new Error('Cloudinary não retornou MP4');\nreturn [{json:{...base,video_url:String(url),video_publico:true,cloudinary_public_id:$json.public_id||null,artefato_final_aprovado:true}}];"
+      },
+      "id": "a65dfd14-c9df-4d59-b34c-67c495b68047",
+      "name": "17 — ARTEFATO FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3640,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$json.video_url}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "8ef41e21-8fe4-4f6f-a831-68be81dc9b06",
+      "name": "19 — YT DOWNLOAD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4120,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{$json.conteudo.titulo}}",
+        "regionCode": "BR",
+        "categoryId": "22",
+        "binaryProperty": "data",
+        "options": {
+          "description": "={{$json.conteudo.legenda+\"\\n\\n\"+$json.conteudo.cta}}",
+          "privacyStatus": "={{$json.youtube_privacy||'private'}}",
+          "selfDeclaredMadeForKids": false
+        }
+      },
+      "id": "16e1602d-5fae-4892-88fa-cff3a811eb53",
+      "name": "20 — YOUTUBE SHORT",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        4360,
+        -220
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "",
+          "name": "RUPTURA_YOUTUBE"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({post_info:{title:String($json.conteudo.titulo).slice(0,2200),privacy_level:$json.tiktok_privacy||'SELF_ONLY',disable_duet:Boolean($json.tiktok_creator_info?.duet_disabled),disable_comment:Boolean($json.tiktok_creator_info?.comment_disabled),disable_stitch:Boolean($json.tiktok_creator_info?.stitch_disabled),brand_content_toggle:false,brand_organic_toggle:false,is_aigc:true},source_info:{source:'PULL_FROM_URL',video_url:$json.video_url}})}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "f09dfc6d-5c2a-414b-ac45-5bf73f706add",
+      "name": "21 — TIKTOK DIRECT POST",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4120,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_TIKTOK"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v26.0/{{$json.instagram_user_id}}/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "media_type",
+              "value": "REELS"
+            },
+            {
+              "name": "video_url",
+              "value": "={{$json.video_url}}"
+            },
+            {
+              "name": "caption",
+              "value": "={{$json.conteudo.legenda+\"\\n\\n\"+$json.conteudo.cta}}"
+            },
+            {
+              "name": "share_to_feed",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "1573fd9f-4eb2-4ca5-bb31-80d14c2f6f04",
+      "name": "23 — INSTAGRAM CRIAR REEL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4120,
+        220
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_META"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "amount": 45,
+        "unit": "seconds"
+      },
+      "id": "2fd663e3-f1db-4a75-a1be-5448e1afc97c",
+      "name": "24 — INSTAGRAM AGUARDAR",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4360,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v26.0/{{$json.id}}?fields=status_code,status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "863764bc-fce2-4885-9747-d746b20d6687",
+      "name": "25 — INSTAGRAM STATUS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4600,
+        220
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_META"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v26.0/{{$json.instagram_user_id}}/media_publish",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "creation_id",
+              "value": "={{$json.id}}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "7f683a09-545b-42ff-af25-44315db74e89",
+      "name": "26 — INSTAGRAM PUBLICAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4840,
+        220
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_META"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v26.0/{{$json.facebook_page_id}}/videos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file_url",
+              "value": "={{$json.video_url}}"
+            },
+            {
+              "name": "description",
+              "value": "={{$json.conteudo.legenda+\"\\n\\n\"+$json.conteudo.cta}}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 180000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "69ec2fca-71c6-4602-8530-89cd678d10b8",
+      "name": "27 — FACEBOOK PAGE VÍDEO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4120,
+        440
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_META"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pinterest.com/v5/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={\"media_type\":\"video\"}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "4e3dfd8b-aedc-481b-9568-6567bb2b5ff5",
+      "name": "28 — PINTEREST REGISTRAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4120,
+        660
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_PINTEREST"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$json.video_url}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "40bbe42a-a7e3-4ab6-8990-db2da1c8bf11",
+      "name": "29 — PINTEREST DOWNLOAD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4360,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reg=$('28 — PINTEREST REGISTRAR').first().json; const item=$input.first(); if(!item.binary?.data) throw new Error('Vídeo Pinterest não disponível para upload.'); return [{json:{...$('17 — ARTEFATO FINAL').first().json,media_id:reg.media_id,upload_url:reg.upload_url,upload_parameters:reg.upload_parameters},binary:item.binary}];"
+      },
+      "id": "2f032ef2-e541-44fa-b814-d47485bec1e1",
+      "name": "30 — PINTEREST PREPARAR UPLOAD",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4600,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.upload_url}}",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "x-amz-algorithm",
+              "value": "={{$json.upload_parameters[\"x-amz-algorithm\"]}}"
+            },
+            {
+              "name": "x-amz-credential",
+              "value": "={{$json.upload_parameters[\"x-amz-credential\"]}}"
+            },
+            {
+              "name": "x-amz-date",
+              "value": "={{$json.upload_parameters[\"x-amz-date\"]}}"
+            },
+            {
+              "name": "x-amz-security-token",
+              "value": "={{$json.upload_parameters[\"x-amz-security-token\"]}}"
+            },
+            {
+              "name": "key",
+              "value": "={{$json.upload_parameters.key}}"
+            },
+            {
+              "name": "policy",
+              "value": "={{$json.upload_parameters.policy}}"
+            },
+            {
+              "name": "x-amz-signature",
+              "value": "={{$json.upload_parameters[\"x-amz-signature\"]}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "video/mp4"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "590cc633-f1af-4623-bb9c-7bea5716b662",
+      "name": "31 — PINTEREST UPLOAD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4840,
+        660
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.pinterest.com/v5/media/{{$json.media_id}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 5,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "f238c4e8-0b33-4246-8430-26c39b34297e",
+      "name": "32 — PINTEREST CONFIRMAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5080,
+        660
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_PINTEREST"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pinterest.com/v5/pins",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({title:$('17 — ARTEFATO FINAL').first().json.conteudo.titulo,description:$('17 — ARTEFATO FINAL').first().json.conteudo.legenda,board_id:$('17 — ARTEFATO FINAL').first().json.pinterest_board_id,media_source:{source_type:\"video_id\",media_id:$('28 — PINTEREST REGISTRAR').first().json.media_id,cover_image_url:$('17 — ARTEFATO FINAL').first().json.pinterest_cover_url}})}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 2,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "90d4e683-bf28-4a8c-9b5d-59595b28c305",
+      "name": "33 — PINTEREST CRIAR PIN",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5320,
+        660
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_PINTEREST"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{plataforma:'Kwai',status:'manual_required',motivo:'Não foi encontrado um fluxo oficial público de publicação de vídeo comparável aos APIs acima; não automatizar login/cliques.',video_url:$('17 — ARTEFATO FINAL').first().json.video_url,titulo:$('17 — ARTEFATO FINAL').first().json.conteudo.titulo}}];"
+      },
+      "id": "7e2b5e22-deb5-4cda-bdfd-d597d1c33f05",
+      "name": "34 — KWAI — MODO SEGURO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4120,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json;\nconst s=getWorkflowStaticData('global');\ns.ciclos=s.ciclos||{};\nconst now=new Date().toISOString();\nconst prev=s.ciclos[j.ciclo_id]||{};\nconst registro={\n  ...prev,\n  status:'RUNNING_PUBLICATION',\n  ciclo_id:j.ciclo_id,\n  tema:j.conteudo?.tema,\n  titulo:j.conteudo?.titulo,\n  score_total:j.conteudo?.score_total,\n  video_url:j.video_url,\n  qa:!!j.qa_aprovado,\n  preflight:!!j.preflight_aprovado,\n  plataformas_configuradas:j.publish||{},\n  publicacoes:prev.publicacoes||{},\n  metrics:prev.metrics||{},\n  timestamp:prev.timestamp||now,\n  updated_at:now\n};\ns.ciclos[j.ciclo_id]=registro;\nconst keys=Object.keys(s.ciclos);\nwhile(keys.length>100){delete s.ciclos[keys.shift()];}\nreturn [{json:{...j,registro_ciclo:registro}}];"
+      },
+      "id": "98ca19f7-9cd4-4923-8e1f-e9a902622fdb",
+      "name": "35 — REGISTRO DO CICLO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5560,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; if(!j.publish?.youtube) return [];\nconst s=getWorkflowStaticData('global');\ns.publication_ledger=s.publication_ledger||{};\nconst key=String(j.ciclo_id)+'::youtube';\nconst prior=s.publication_ledger[key];\nif(prior?.status==='PUBLISHED') throw new Error('PUBLICAÇÃO DUPLA BLOQUEADA: YOUTUBE já publicada para este ciclo.');\nif(prior?.status==='CLAIMED') throw new Error('PUBLICAÇÃO EM RECUPERAÇÃO BLOQUEADA: YOUTUBE já possui uma tentativa registrada. Verifique o estado na plataforma antes de repetir.');\ns.publication_ledger[key]={status:'CLAIMED',platform:'youtube',ciclo_id:j.ciclo_id,claimed_at:new Date().toISOString(),fingerprint:j.conteudo_fingerprint||null};\nreturn [{json:j}];"
+      },
+      "id": "ebfededd-b826-4018-a429-9bf45f6b9f88",
+      "name": "18.1 — GATE YOUTUBE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3880,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; if(!j.publish?.tiktok) return [];\nconst s=getWorkflowStaticData('global');\ns.publication_ledger=s.publication_ledger||{};\nconst key=String(j.ciclo_id)+'::tiktok';\nconst prior=s.publication_ledger[key];\nif(prior?.status==='PUBLISHED') throw new Error('PUBLICAÇÃO DUPLA BLOQUEADA: TIKTOK já publicada para este ciclo.');\nif(prior?.status==='CLAIMED') throw new Error('PUBLICAÇÃO EM RECUPERAÇÃO BLOQUEADA: TIKTOK já possui uma tentativa registrada. Verifique o estado na plataforma antes de repetir.');\ns.publication_ledger[key]={status:'CLAIMED',platform:'tiktok',ciclo_id:j.ciclo_id,claimed_at:new Date().toISOString(),fingerprint:j.conteudo_fingerprint||null};\nreturn [{json:j}];"
+      },
+      "id": "bcbac895-6659-4505-a409-96493a2a1a9f",
+      "name": "18.2 — GATE TIKTOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; if(!j.publish?.instagram) return [];\nconst s=getWorkflowStaticData('global');\ns.publication_ledger=s.publication_ledger||{};\nconst key=String(j.ciclo_id)+'::instagram';\nconst prior=s.publication_ledger[key];\nif(prior?.status==='PUBLISHED') throw new Error('PUBLICAÇÃO DUPLA BLOQUEADA: INSTAGRAM já publicada para este ciclo.');\nif(prior?.status==='CLAIMED') throw new Error('PUBLICAÇÃO EM RECUPERAÇÃO BLOQUEADA: INSTAGRAM já possui uma tentativa registrada. Verifique o estado na plataforma antes de repetir.');\ns.publication_ledger[key]={status:'CLAIMED',platform:'instagram',ciclo_id:j.ciclo_id,claimed_at:new Date().toISOString(),fingerprint:j.conteudo_fingerprint||null};\nreturn [{json:j}];"
+      },
+      "id": "c2f25dd6-c6fd-4cbc-a064-d3cb144a49e6",
+      "name": "18.3 — GATE INSTAGRAM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3880,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; if(!j.publish?.facebook) return [];\nconst s=getWorkflowStaticData('global');\ns.publication_ledger=s.publication_ledger||{};\nconst key=String(j.ciclo_id)+'::facebook';\nconst prior=s.publication_ledger[key];\nif(prior?.status==='PUBLISHED') throw new Error('PUBLICAÇÃO DUPLA BLOQUEADA: FACEBOOK já publicada para este ciclo.');\nif(prior?.status==='CLAIMED') throw new Error('PUBLICAÇÃO EM RECUPERAÇÃO BLOQUEADA: FACEBOOK já possui uma tentativa registrada. Verifique o estado na plataforma antes de repetir.');\ns.publication_ledger[key]={status:'CLAIMED',platform:'facebook',ciclo_id:j.ciclo_id,claimed_at:new Date().toISOString(),fingerprint:j.conteudo_fingerprint||null};\nreturn [{json:j}];"
+      },
+      "id": "64bfbd6a-0981-4ef6-b9dd-c7c42b0f5719",
+      "name": "18.4 — GATE FACEBOOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3880,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; if(!j.publish?.pinterest) return []; if(!j.pinterest_board_id) throw new Error('Pinterest habilitado exige pinterest_board_id.'); if(!/^https:\\/\\//i.test(String(j.pinterest_cover_url||j.image_url||''))) throw new Error('Pinterest exige cover_image_url HTTPS ou imagem IA pública.');\nconst s=getWorkflowStaticData('global'); s.publication_ledger=s.publication_ledger||{}; const key=String(j.ciclo_id)+'::pinterest'; const prior=s.publication_ledger[key];\nif(prior?.status==='PUBLISHED') throw new Error('PUBLICAÇÃO DUPLA BLOQUEADA: PINTEREST já publicada para este ciclo.');\nif(prior?.status==='CLAIMED') throw new Error('PUBLICAÇÃO EM RECUPERAÇÃO BLOQUEADA: PINTEREST já possui uma tentativa registrada. Verifique o estado na plataforma antes de repetir.');\ns.publication_ledger[key]={status:'CLAIMED',platform:'pinterest',ciclo_id:j.ciclo_id,claimed_at:new Date().toISOString(),fingerprint:j.conteudo_fingerprint||null};\nreturn [{json:{...j,pinterest_cover_url:j.pinterest_cover_url||j.image_url}}];"
+      },
+      "id": "ac3a1e27-8550-422e-9a46-43ccd2058ad8",
+      "name": "18.5 — GATE PINTEREST",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3880,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "559e511b-5e8f-47d1-a742-4c688f24e4a6",
+      "name": "11.1 — AGUARDAR NOVAMENTE",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2680,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.creatomate.com/v2/renders/{{$json.id}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "c535cb3a-20f3-4d3d-b9c6-a4e0413a3d19",
+      "name": "12.1 — STATUS CREATOMATE 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2920,
+        -120
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_CREATOMATE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "fded2dfd-78f3-4ff1-aa62-e139350e2de7",
+      "name": "11.2 — AGUARDAR TERCEIRA VEZ",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3160,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.creatomate.com/v2/renders/{{$json.id}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "260cd15a-947e-466f-a7f7-d9fdddc2f3a2",
+      "name": "12.2 — STATUS CREATOMATE 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3400,
+        -120
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_CREATOMATE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; const s=getWorkflowStaticData('global'); s.ultimos=s.ultimos||[]; const rec={data:new Date().toISOString(),ciclo_id:j.ciclo_id,tema:j.conteudo?.tema||null,titulo:j.conteudo?.titulo||null,score_total:j.conteudo?.score_total??null,video_url:j.video_url||null,status:j.registro_ciclo?.status||'PUBLICATION_STARTED'}; s.ultimos=[rec,...s.ultimos.filter(x=>x.ciclo_id!==j.ciclo_id)].slice(0,100); return [{json:{...j,memoria_atualizada:true,total_ciclos:s.ultimos.length,ultimo:s.ultimos[0]}}];"
+      },
+      "id": "5c3c7369-31e3-4786-b04d-9a8114f31afd",
+      "name": "36 — MEMÓRIA DO CICLO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1cad93ef-5aad-40a5-992c-181c6bfc12e5",
+              "leftValue": "={{$json.status}}",
+              "rightValue": "succeeded",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "ba547f90-a101-4ae6-b7db-f4fd75655175",
+      "name": "12A — CREATOMATE PRONTO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2680,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4b1fc4dd-190b-4f9b-9884-c2fd400bb467",
+              "leftValue": "={{$json.status}}",
+              "rightValue": "succeeded",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "5b6b23ac-fb30-498f-8a68-0d0a89b938f1",
+      "name": "12B — CREATOMATE PRONTO 2?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3160,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f6a76eb0-a943-43eb-babf-c64e7391d530",
+              "leftValue": "={{$json.status}}",
+              "rightValue": "succeeded",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "a9cb4e0b-5625-43cb-a288-0392eb669690",
+      "name": "12C — CREATOMATE PRONTO 3?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3640,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "throw new Error('Creatomate não concluiu o vídeo após 3 verificações. Não publicar.');"
+      },
+      "id": "756bac4f-66f7-498f-967a-0d72c7db26f9",
+      "name": "12D — CREATOMATE NÃO CONCLUIU",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3880,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/creator_info/query/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={}",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "80f827d0-cdd3-42f5-b0b7-3c5504576439",
+      "name": "21A — TIKTOK CREATOR INFO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2100,
+        900
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_TIKTOK"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const base=$('17 — ARTEFATO FINAL').first().json;\nconst data=$json.data||{};\nif(($json.error?.code||'ok')!=='ok') throw new Error('TikTok creator_info falhou: '+String($json.error?.message||$json.error?.code||'erro desconhecido'));\nconst opts=Array.isArray(data.privacy_level_options)?data.privacy_level_options:[];\nif(!opts.length) throw new Error('TikTok não retornou privacy_level_options.');\nconst dur=Number(base.conteudo?.duracao_segundos||base.video?.seconds||12);\nconst max=Number(data.max_video_post_duration_sec||0);\nif(max>0&&dur>max) throw new Error('Vídeo excede o limite do TikTok para este criador: '+dur+'s > '+max+'s.');\nif(!/^https:\\/\\//i.test(String(base.video_url||''))) throw new Error('TikTok exige video_url HTTPS público.');\nconst desired=base.tiktok_privacy||'PUBLIC_TO_EVERYONE';\nconst privacy=opts.includes(desired)?desired:(opts.includes('SELF_ONLY')?'SELF_ONLY':opts[0]);\nreturn [{json:{...base,tiktok_privacy:privacy,tiktok_creator_info:data}}];"
+      },
+      "id": "08d44b52-2e9e-4d84-a8cb-695617dd730a",
+      "name": "21B — TIKTOK ESCOLHER PRIVACIDADE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json;\nconst errors=[];\nconst https=u=>typeof u==='string'&&/^https:\\/\\//i.test(u);\nconst nonempty=v=>typeof v==='string'&&v.trim().length>0;\n\nif(!nonempty(j.ciclo_id)) errors.push('ciclo_id ausente');\nif(j.production_mode!=='production') errors.push('production_mode inválido');\nif(j.artefato_final_aprovado!==true) errors.push('artefato final não aprovado');\nif(!j.video_url||!https(j.video_url)) errors.push('video_url HTTPS pública ausente');\nif(!nonempty(j.cloudinary_cloud_name)) errors.push('cloudinary_cloud_name não configurado');\nif(!nonempty(j.cloudinary_upload_preset)) errors.push('cloudinary_upload_preset não configurado');\n\nif(!j.conteudo?.titulo||!j.conteudo?.gancho||!j.conteudo?.roteiro||!j.conteudo?.legenda||!j.conteudo?.cta) errors.push('conteúdo incompleto');\nif(j.fact_check_aprovado!==true) errors.push('fact-check não aprovado');\nif(j.moderacao_aprovada!==true) errors.push('moderação não aprovada');\nif(j.compliance_aprovado!==true) errors.push('compliance não aprovado');\n\nif(!Array.isArray(j.conteudo?.hashtags)||j.conteudo.hashtags.length<1||j.conteudo.hashtags.length>30) errors.push('hashtags inválidas');\nif(String(j.conteudo?.titulo||'').length>100) errors.push('título excede 100 caracteres para YouTube');\nif(String(j.conteudo?.legenda||'').length>2200) errors.push('legenda excede 2200 caracteres para Meta');\nif(!Array.isArray(j.conteudo?.fontes)||j.conteudo.fontes.length<1||j.conteudo.fontes.some(u=>!/^https:\\/\\//i.test(String(u)))) errors.push('fontes HTTPS inválidas');\n\nconst dur=Number(j.conteudo?.duracao_segundos);\nif(!Number.isFinite(dur)||dur<4||dur>12) errors.push('duração inválida');\n\nif(j.publish?.youtube && !['private','unlisted','public'].includes(j.youtube_privacy)) errors.push('youtube_privacy inválido');\nif(j.publish?.youtube && j.youtube_privacy==='public' && j.youtube_api_project_audited!==true) errors.push('YouTube público exige youtube_api_project_audited=true após auditoria do projeto/API.');\nif(j.publish?.instagram && !nonempty(j.instagram_user_id)) errors.push('instagram_user_id não configurado');\nif(j.publish?.facebook && !nonempty(j.facebook_page_id)) errors.push('facebook_page_id não configurado');\nif(j.publish?.pinterest && !nonempty(j.pinterest_board_id)) errors.push('Pinterest exige board_id');\nif(j.publish?.pinterest && !https(j.pinterest_cover_url||j.image_url)) errors.push('Pinterest exige cover_image_url HTTPS ou imagem IA pública');\n\nif(j.publish?.tiktok && !nonempty(j.tiktok_privacy)) errors.push('TikTok privacy não configurado');\nif(j.publish?.tiktok && Array.isArray(j.tiktok_creator_info?.privacy_level_options) && !j.tiktok_creator_info.privacy_level_options.includes(j.tiktok_privacy)) errors.push('TikTok privacy não está entre as opções retornadas pelo creator_info');\nif(j.publish?.tiktok && j.tiktok_creator_info?.max_video_post_duration_sec && dur>Number(j.tiktok_creator_info.max_video_post_duration_sec)) errors.push('Vídeo excede limite retornado pelo TikTok creator_info');\nif(j.publish?.tiktok && j.tiktok_url_prefix_verified!==true) errors.push('TikTok PULL_FROM_URL exige domínio/prefixo de URL verificado');\nif(j.publish?.tiktok && j.tiktok_user_consent!==true) errors.push('TikTok Direct Post exige consentimento/autorização do criador');\n\nif(j.dry_run===true) errors.push('dry_run=true não é permitido no modo produção.');\n\nif(errors.length) throw new Error('PRÉ-FLIGHT BLOQUEOU O CICLO: '+errors.join('; '));\nreturn [{json:{...j,preflight_aprovado:true,preflight_timestamp:new Date().toISOString()}}];"
+      },
+      "id": "9e3d7c3e-0c9d-4f9f-9d2d-1b1a4f6a6f11",
+      "name": "17A — PRÉ-FLIGHT PRODUÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3880,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 20,
+        "unit": "seconds"
+      },
+      "id": "40280610-078c-418f-ac8a-7c2e15f1c689",
+      "name": "22.1 — TIKTOK AGUARDAR STATUS",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/status/fetch/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({publish_id:$json.data?.publish_id||$json.publish_id})}}",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "3ae07fe7-b57c-4a9f-b84d-1262bb3fd8f4",
+      "name": "22.2 — TIKTOK STATUS 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        4840,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_TIKTOK"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tiktokdone1",
+              "leftValue": "={{$json.data?.status||$json.status}}",
+              "rightValue": "PUBLISH_COMPLETE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "ab61a5c1-8ec1-4c29-a687-34467331f0e8",
+      "name": "22A — TIKTOK CONCLUÍDO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5080,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "96fd204d-4fa2-4552-8d33-fa6c61f4a65d",
+      "name": "22.3 — TIKTOK AGUARDAR FINAL",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5320,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/status/fetch/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=UTF-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({publish_id:$json.data?.publish_id||$json.publish_id})}}",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "fd9f5cbb-2088-4eb4-86e9-2bd0ff31d53a",
+      "name": "22.4 — TIKTOK STATUS FINAL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5560,
+        120
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_TIKTOK"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tiktokdone2",
+              "leftValue": "={{$json.data?.status||$json.status}}",
+              "rightValue": "PUBLISH_COMPLETE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "f34aab0d-908f-4bae-8753-5586b8ba1f47",
+      "name": "22B — TIKTOK FINALIZOU?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5800,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const art=$('17 — ARTEFATO FINAL').first().json; const out=$input.first().json; const data=out.data||{}; const status=String(data.status||out.status||'UNKNOWN'); const s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{}; const r=s.ciclos[art.ciclo_id]||{ciclo_id:art.ciclo_id,publicacoes:{}}; r.publicacoes=r.publicacoes||{}; const ids=data.publicaly_available_post_id||data.publicly_available_post_id||[]; const postId=Array.isArray(ids)&&ids.length?String(ids[0]):null; const failed=status==='FAILED'; r.publicacoes.tiktok={status:failed?'FAILED':'PROCESSING',publish_id:data.publish_id||out.publish_id||null,post_id:postId,fail_reason:failed?(data.fail_reason||out.fail_reason||null):null,updated_at:new Date().toISOString()}; r.status=failed?'PUBLICATION_RECORDED':'PUBLICATION_PENDING'; r.updated_at=new Date().toISOString(); s.ciclos[art.ciclo_id]=r; return [{json:{...art,publication_platform:'tiktok',publication_status:r.publicacoes.tiktok.status,tiktok_publish_id:r.publicacoes.tiktok.publish_id,tiktok_post_id:postId,tiktok_status:status}}];"
+      },
+      "id": "0bd7f959-906e-4be1-97cb-111d5865a33e",
+      "name": "22C — TIKTOK FALHOU",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6040,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "igdone",
+              "leftValue": "={{$json.status_code||$json.status}}",
+              "rightValue": "FINISHED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c03d7ecd-7bb2-42ad-a096-5833b5c725e7",
+      "name": "25A — INSTAGRAM PRONTO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4840,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "throw new Error('Instagram não confirmou FINISHED após a espera. status_code='+String($json.status_code||'desconhecido')+' status='+String($json.status||''));"
+      },
+      "id": "3a43f687-407e-4fd4-ba73-20b3f8b6c557",
+      "name": "25B — INSTAGRAM NÃO PRONTO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5080,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pinready",
+              "leftValue": "={{$json.status}}",
+              "rightValue": "succeeded",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "848e71d4-9806-4e6c-bfbe-ecdf54f433f7",
+      "name": "32A — PINTEREST PRONTO?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5320,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "throw new Error('Pinterest não confirmou status succeeded para a mídia. Status: '+String($json.status||'desconhecido'));"
+      },
+      "id": "78cd91dd-5b1f-4471-9e8c-96c71a60f8ee",
+      "name": "32B — PINTEREST NÃO PRONTO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5560,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json;\nconst c=j.conteudo||{};\nconst fontes=Array.isArray(c.fontes)?c.fontes:[];\nif(j.moderacao_aprovada!==true) throw new Error('COMPLIANCE bloqueou: moderação OpenAI não aprovada.');\nif(j.fact_check_aprovado!==true) throw new Error('COMPLIANCE bloqueou: fact-check não aprovado.');\nconst texto=[c.tema,c.angulo,c.titulo,c.gancho,c.roteiro,c.legenda,c.cta].map(x=>String(x||'')).join(' ').toLowerCase();\nconst bloqueios=[\n  /como fabricar.*arma/,\n  /como construir.*explosiv/,\n  /como fazer.*explosivo/,\n  /instruç(ão|oes).*suic[ií]d/,\n  /como invadir.*conta/,\n  /roubar.*senha/,\n  /burlar.*autentica/\n];\nif(bloqueios.some(r=>r.test(texto))) throw new Error('COMPLIANCE bloqueou conteúdo potencialmente perigoso ou ilícito.');\nif(fontes.some(u=>!/^https:\\/\\//i.test(String(u)))) throw new Error('COMPLIANCE bloqueou fonte não HTTPS.');\nreturn [{json:{...j,compliance_aprovado:true,compliance_timestamp:new Date().toISOString()}}];"
+      },
+      "id": "f4c2e9f0-1e6f-4c0a-9f6d-8d7f8a1b2c33",
+      "name": "09A — COMPLIANCE / SEGURANÇA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({model:'gpt-5.6-sol',store:false,reasoning:{effort:'high'},tools:[{type:'web_search'}],input:'Você é o verificador factual independente do RUPTURA ONE. Verifique o conteúdo abaixo usando a web. Confirme as afirmações factuais centrais, datas, números, nomes e causalidades. Priorize fontes primárias e oficiais. Não aprove alegações que não possam ser sustentadas. Se houver divergência relevante, marque como não aprovado. Retorne SOMENTE o JSON definido no schema. CONTEÚDO: '+JSON.stringify($json.conteudo)+'\nFONTES DECLARADAS: '+JSON.stringify($json.conteudo.fontes),text:{format:{type:'json_schema',name:'ruptura_fact_check',strict:true,schema:{type:'object',properties:{aprovado:{type:'boolean'},confianca:{type:'number'},resumo:{type:'string'},afirmacoes_verificadas:{type:'array',items:{type:'string'}},afirmacoes_nao_verificadas:{type:'array',items:{type:'string'}},fontes_confirmadas:{type:'array',items:{type:'string'}}},required:['aprovado','confianca','resumo','afirmacoes_verificadas','afirmacoes_nao_verificadas','fontes_confirmadas'],additionalProperties:false}}}})}}",
+        "options": {
+          "timeout": 180000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 7000
+        }
+      },
+      "id": "199cd6f7-622b-4a18-a964-113dc95633f2",
+      "name": "09.1 — VERIFICAÇÃO FACTUAL INDEPENDENTE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1960,
+        180
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "RUPTURA_OPENAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$json; let t=r.output_text||r.outputText||r.text; if(!t&&Array.isArray(r.output)){for(const o of r.output){for(const c of (o.content||[])){if(typeof c.text==='string') t=(t||'')+c.text;}}} if(!t) throw new Error('Verificador factual não retornou conteúdo.'); t=String(t).trim().replace(/^```(?:json)?\\s*/i,'').replace(/\\s*```$/,''); const a=t.indexOf('{'),b=t.lastIndexOf('}'); if(a<0||b<=a) throw new Error('Verificador factual não retornou JSON válido.'); let v; try{v=JSON.parse(t.slice(a,b+1));}catch(e){throw new Error('JSON do verificador factual inválido.');} if(v.aprovado!==true) throw new Error('VERIFICAÇÃO FACTUAL BLOQUEOU: '+String(v.resumo||'afirmações não suficientemente verificadas')); const conf=Number(v.confianca); if(!Number.isFinite(conf)||conf<0.85) throw new Error('VERIFICAÇÃO FACTUAL BLOQUEOU: confiança abaixo de 0,85.'); if(!Array.isArray(v.fontes_confirmadas)||v.fontes_confirmadas.length<1||v.fontes_confirmadas.some(u=>!/^https:\\/\\//i.test(String(u)))) throw new Error('VERIFICAÇÃO FACTUAL BLOQUEOU: fontes confirmadas inválidas.'); const base=$('09 — QA CONTEÚDO').first().json; return [{json:{...base,fact_check:v,fact_check_aprovado:true}}];"
+      },
+      "id": "f49f6cc6-95ae-4946-a483-25d7923194f6",
+      "name": "09.2 — GATE FACT CHECK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/moderations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({model:'omni-moderation-latest',input:String([$json.conteudo?.tema,$json.conteudo?.angulo,$json.conteudo?.titulo,$json.conteudo?.gancho,$json.conteudo?.roteiro,$json.conteudo?.legenda,$json.conteudo?.cta].filter(Boolean).join('\\n')).slice(0,20000)})}}",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "e7a7f0d1-7c2e-4f2d-9f0a-1b9a0d8d0a17",
+      "name": "09.3 — MODERAÇÃO OPENAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1960,
+        420
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "RUPTURA_OPENAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$json; const result=r.results?.[0]; if(!result) throw new Error('Moderação OpenAI não retornou resultado.'); if(result.flagged===true) throw new Error('MODERAÇÃO OPENAI bloqueou o conteúdo.'); const base=$('09.2 — GATE FACT CHECK').first().json; return [{json:{...base,moderacao_aprovada:true,moderacao_timestamp:new Date().toISOString()}}];"
+      },
+      "id": "b4e8f9d2-5f3b-4d9a-8f11-2e4a6b7c8d90",
+      "name": "09.4 — GATE MODERAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json; const s=getWorkflowStaticData('global'); s.fingerprints=s.fingerprints||{}; const norm=v=>String(v||'').normalize('NFKC').toLowerCase().replace(/\\s+/g,' ').trim(); const source=String((j.noticias||[]).map(x=>norm(x.link||x.title)).sort().join('|')); const title=norm(j.conteudo?.titulo); const tema=norm(j.conteudo?.tema); const angle=norm(j.conteudo?.angulo); let h=2166136261; for(const ch of (source+'|'+title+'|'+tema+'|'+angle)){h^=ch.charCodeAt(0); h=Math.imul(h,16777619);} const fp=(h>>>0).toString(16); if(s.fingerprints[fp]) throw new Error('DUPLICATA BLOQUEADA: este conteúdo já foi processado.'); s.fingerprints[fp]={created_at:new Date().toISOString(),ciclo_id:j.ciclo_id,titulo:j.conteudo?.titulo||''}; const keys=Object.keys(s.fingerprints); while(keys.length>200) delete s.fingerprints[keys.shift()]; return [{json:{...j,conteudo_fingerprint:fp,duplicata_verificada:true}}];"
+      },
+      "id": "c9d1e2f3-a4b5-46c7-8d9e-0f1a2b3c4d56",
+      "name": "09.5 — ANTI-DUPLICAÇÃO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const art=$('17 — ARTEFATO FINAL').first().json;\nconst out=$input.first().json;\nconst id=out.id||out.videoId||out.video_id||out.resource?.id;\nconst s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{}; s.publication_ledger=s.publication_ledger||{}; s.publication_ledger[String(art.ciclo_id)+'::youtube']={status:!!id?'PUBLISHED':'FAILED',platform:'youtube',ciclo_id:art.ciclo_id,updated_at:new Date().toISOString(),fingerprint:art.conteudo_fingerprint||null};\nconst r=s.ciclos[art.ciclo_id]||{ciclo_id:art.ciclo_id,publicacoes:{}};\nr.publicacoes=r.publicacoes||{};\nr.publicacoes.youtube={status:id?'PUBLISHED':'FAILED',video_id:id||null,updated_at:new Date().toISOString()};\nr.status='PUBLICATION_UPDATED'; r.updated_at=new Date().toISOString();\nconst enabled=Object.entries(r.publicacoes||{}).filter(([k])=>r.plataformas_configuradas?.[k]===true); const vals=enabled.map(([,v])=>v.status); r.status=vals.length&&vals.every(v=>v==='PUBLISHED')?'PUBLICATION_COMPLETE':(vals.some(v=>v==='FAILED')?'PUBLICATION_PARTIAL_OR_FAILED':'PUBLICATION_UPDATED'); s.ciclos[art.ciclo_id]=r;\nreturn [{json:{...art,publication_platform:'youtube',publication_status:r.publicacoes.youtube.status,youtube_video_id:id||null}}];"
+      },
+      "id": "b064fdc1-0cd9-4c0f-a745-8721d6493f73",
+      "name": "20A — REGISTRAR RESULTADO YOUTUBE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4700,
+        -520
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const art=$('17 — ARTEFATO FINAL').first().json;\nconst out=$input.first().json;\nconst data=out.data||{};\nconst ids=data.publicaly_available_post_id||data.publicly_available_post_id||[];\nconst postId=Array.isArray(ids)&&ids.length?String(ids[0]):null;\nconst status=data.status||'UNKNOWN';\nconst s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{}; s.publication_ledger=s.publication_ledger||{}; s.publication_ledger[String(art.ciclo_id)+'::tiktok']={status:(status==='PUBLISH_COMPLETE'?'PUBLISHED':(status==='FAILED'?'FAILED':'PROCESSING')),platform:'tiktok',ciclo_id:art.ciclo_id,updated_at:new Date().toISOString(),fingerprint:art.conteudo_fingerprint||null};\nconst r=s.ciclos[art.ciclo_id]||{ciclo_id:art.ciclo_id,publicacoes:{}};\nr.publicacoes=r.publicacoes||{};\nr.publicacoes.tiktok={status:status==='PUBLISH_COMPLETE'?'PUBLISHED':(status==='FAILED'?'FAILED':'PROCESSING'),publish_id:data.publish_id||out.publish_id||null,post_id:postId,updated_at:new Date().toISOString()};\nr.status='PUBLICATION_UPDATED'; r.updated_at=new Date().toISOString(); const enabled=Object.entries(r.publicacoes||{}).filter(([k])=>r.plataformas_configuradas?.[k]===true); const vals=enabled.map(([,v])=>v.status); r.status=vals.length&&vals.every(v=>v==='PUBLISHED')?'PUBLICATION_COMPLETE':(vals.some(v=>v==='FAILED')?'PUBLICATION_PARTIAL_OR_FAILED':'PUBLICATION_UPDATED'); s.ciclos[art.ciclo_id]=r;\nreturn [{json:{...art,publication_platform:'tiktok',publication_status:r.publicacoes.tiktok.status,tiktok_post_id:postId,tiktok_publish_id:r.publicacoes.tiktok.publish_id}}];"
+      },
+      "id": "f6f1cbd7-0eb7-47be-804d-9bbc26db4b34",
+      "name": "22D — REGISTRAR RESULTADO TIKTOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6000,
+        300
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const art=$('17 — ARTEFATO FINAL').first().json;\nconst out=$input.first().json;\nconst s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{}; s.publication_ledger=s.publication_ledger||{}; s.publication_ledger[String(art.ciclo_id)+'::tiktok']={status:'FAILED',platform:'tiktok',ciclo_id:art.ciclo_id,updated_at:new Date().toISOString(),fingerprint:art.conteudo_fingerprint||null};\nconst r=s.ciclos[art.ciclo_id]||{ciclo_id:art.ciclo_id,publicacoes:{}};\nr.publicacoes=r.publicacoes||{};\nr.publicacoes.tiktok={status:'FAILED',fail_reason:out.fail_reason||out.error||'TikTok publish failed',updated_at:new Date().toISOString()};\nr.status='PUBLICATION_UPDATED'; r.updated_at=new Date().toISOString(); const enabled=Object.entries(r.publicacoes||{}).filter(([k])=>r.plataformas_configuradas?.[k]===true); const vals=enabled.map(([,v])=>v.status); r.status=vals.length&&vals.every(v=>v==='PUBLISHED')?'PUBLICATION_COMPLETE':(vals.some(v=>v==='FAILED')?'PUBLICATION_PARTIAL_OR_FAILED':'PUBLICATION_UPDATED'); s.ciclos[art.ciclo_id]=r;\nreturn [{json:{...art,publication_platform:'tiktok',publication_status:'FAILED'}}];"
+      },
+      "id": "c41a4ed8-b4e5-4b95-a73e-56f8ef93fab0",
+      "name": "22E — REGISTRAR FALHA TIKTOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6000,
+        520
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const art=$('17 — ARTEFATO FINAL').first().json;\nconst out=$input.first().json;\nconst id=out.id||out.media_id||out.container_id;\nconst s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{}; s.publication_ledger=s.publication_ledger||{}; s.publication_ledger[String(art.ciclo_id)+'::instagram']={status:!!id?'PUBLISHED':'FAILED',platform:'instagram',ciclo_id:art.ciclo_id,updated_at:new Date().toISOString(),fingerprint:art.conteudo_fingerprint||null};\nconst r=s.ciclos[art.ciclo_id]||{ciclo_id:art.ciclo_id,publicacoes:{}};\nr.publicacoes=r.publicacoes||{};\nr.publicacoes.instagram={status:id?'PUBLISHED':'FAILED',media_id:id||null,updated_at:new Date().toISOString()};\nr.status='PUBLICATION_UPDATED'; r.updated_at=new Date().toISOString(); const enabled=Object.entries(r.publicacoes||{}).filter(([k])=>r.plataformas_configuradas?.[k]===true); const vals=enabled.map(([,v])=>v.status); r.status=vals.length&&vals.every(v=>v==='PUBLISHED')?'PUBLICATION_COMPLETE':(vals.some(v=>v==='FAILED')?'PUBLICATION_PARTIAL_OR_FAILED':'PUBLICATION_UPDATED'); s.ciclos[art.ciclo_id]=r;\nreturn [{json:{...art,publication_platform:'instagram',publication_status:r.publicacoes.instagram.status,instagram_media_id:id||null}}];"
+      },
+      "id": "5e61fcc3-82b2-4b7c-9c36-17a5598c61f3",
+      "name": "26A — REGISTRAR RESULTADO INSTAGRAM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7200,
+        -360
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const art=$('17 — ARTEFATO FINAL').first().json;\nconst out=$input.first().json;\nconst id=out.id||out.video_id;\nconst s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{}; s.publication_ledger=s.publication_ledger||{}; s.publication_ledger[String(art.ciclo_id)+'::facebook']={status:!!id?'PUBLISHED':'FAILED',platform:'facebook',ciclo_id:art.ciclo_id,updated_at:new Date().toISOString(),fingerprint:art.conteudo_fingerprint||null};\nconst r=s.ciclos[art.ciclo_id]||{ciclo_id:art.ciclo_id,publicacoes:{}};\nr.publicacoes=r.publicacoes||{};\nr.publicacoes.facebook={status:id?'PUBLISHED':'FAILED',video_id:id||null,updated_at:new Date().toISOString()};\nr.status='PUBLICATION_UPDATED'; r.updated_at=new Date().toISOString(); const enabled=Object.entries(r.publicacoes||{}).filter(([k])=>r.plataformas_configuradas?.[k]===true); const vals=enabled.map(([,v])=>v.status); r.status=vals.length&&vals.every(v=>v==='PUBLISHED')?'PUBLICATION_COMPLETE':(vals.some(v=>v==='FAILED')?'PUBLICATION_PARTIAL_OR_FAILED':'PUBLICATION_UPDATED'); s.ciclos[art.ciclo_id]=r;\nreturn [{json:{...art,publication_platform:'facebook',publication_status:r.publicacoes.facebook.status,facebook_video_id:id||null}}];"
+      },
+      "id": "0ddf34da-36a8-4e2f-8f15-ede378a5d342",
+      "name": "27A — REGISTRAR RESULTADO FACEBOOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7200,
+        40
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const art=$('17 — ARTEFATO FINAL').first().json;\nconst out=$input.first().json;\nconst id=out.id||out.pin_id;\nconst s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{}; s.publication_ledger=s.publication_ledger||{}; s.publication_ledger[String(art.ciclo_id)+'::pinterest']={status:!!id?'PUBLISHED':'FAILED',platform:'pinterest',ciclo_id:art.ciclo_id,updated_at:new Date().toISOString(),fingerprint:art.conteudo_fingerprint||null};\nconst r=s.ciclos[art.ciclo_id]||{ciclo_id:art.ciclo_id,publicacoes:{}};\nr.publicacoes=r.publicacoes||{};\nr.publicacoes.pinterest={status:id?'PUBLISHED':'FAILED',pin_id:id||null,updated_at:new Date().toISOString()};\nr.status='PUBLICATION_UPDATED'; r.updated_at=new Date().toISOString(); const enabled=Object.entries(r.publicacoes||{}).filter(([k])=>r.plataformas_configuradas?.[k]===true); const vals=enabled.map(([,v])=>v.status); r.status=vals.length&&vals.every(v=>v==='PUBLISHED')?'PUBLICATION_COMPLETE':(vals.some(v=>v==='FAILED')?'PUBLICATION_PARTIAL_OR_FAILED':'PUBLICATION_UPDATED'); s.ciclos[art.ciclo_id]=r;\nreturn [{json:{...art,publication_platform:'pinterest',publication_status:r.publicacoes.pinterest.status,pinterest_pin_id:id||null}}];"
+      },
+      "id": "c6a132e9-c633-476c-9921-b31a505a305c",
+      "name": "33A — REGISTRAR RESULTADO PINTEREST",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7200,
+        440
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "76001bdf-dcc9-4bac-9888-559a6d2f240a",
+      "name": "37 — MÉTRICAS A CADA 6H",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        900
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const s=getWorkflowStaticData('global');\nconst ciclos=s.ciclos||{};\nconst out=[];\nconst now=Date.now();\ns.metricas_ultima_consulta=s.metricas_ultima_consulta||{};\nfor(const [ciclo_id,r] of Object.entries(ciclos)){\n  const p=r.publicacoes||{};\n  for(const [platform,v] of Object.entries(p)){\n    if(v?.status!=='PUBLISHED') continue;\n    const id=v.video_id||v.post_id||v.media_id||v.pin_id;\n    if(!id) continue;\n    const key=platform+':'+String(id);\n    const last=Number(s.metricas_ultima_consulta[key]||0);\n    if(now-last<5*60*60*1000) continue;\n    out.push({json:{ciclo_id,tema:r.tema,titulo:r.titulo,platform,platform_id:String(id)}});\n    s.metricas_ultima_consulta[key]=now;\n  }\n}\nreturn out;"
+      },
+      "id": "d4d61318-6bde-470e-a0ba-ce1d49ff8175",
+      "name": "38 — SELECIONAR MÉTRICAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        900
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$json; return j.platform==='youtube'?[{json:j}]:[];"
+      },
+      "id": "f6e958f2-90d9-4eb2-bd91-9091880064f1",
+      "name": "39A — FILTRAR YOUTUBE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        780
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.googleapis.com/youtube/v3/videos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "statistics,processingDetails,status"
+            },
+            {
+              "name": "id",
+              "value": "={{$json.platform_id}}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "17ad3e6c-11a2-486d-b772-a9ba36385766",
+      "name": "39B — YOUTUBE MÉTRICAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        780
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "",
+          "name": "RUPTURA_YOUTUBE"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$json; const item=j.items?.[0]; if(!item) return [];\nconst base=$('39A — FILTRAR YOUTUBE').item.json;\nconst processing=item.processingDetails?.processingStatus||null; if(processing && processing!=='succeeded') return []; const st=item.statistics||{};\nconst views=Number(st.viewCount||0), likes=Number(st.likeCount||0), comments=Number(st.commentCount||0);\nconst engagement=views>0?(likes+comments)/views:0;\nconst s=getWorkflowStaticData('global'); s.ciclos=s.ciclos||{};\nconst r=s.ciclos[base.ciclo_id]; if(!r) return [];\nr.metrics=r.metrics||{}; r.metrics.youtube={timestamp:new Date().toISOString(),views,likes,comments,engagement_rate:engagement,processing_status:item.processingDetails?.processingStatus||null};\ns.metricas=s.metricas||[]; s.metricas.unshift({ciclo_id:base.ciclo_id,platform:'youtube',tema:base.tema,views,likes,comments,engagement_rate:engagement,timestamp:new Date().toISOString()}); s.metricas=s.metricas.slice(0,200);\ns.aprendizado=s.aprendizado||{}; s.aprendizado.temas=s.aprendizado.temas||{};\nconst t=base.tema||'sem_tema'; const old=s.aprendizado.temas[t]||{amostras:0,score_total:0,engagement_total:0};\nconst score=views + likes*5 + comments*10; old.amostras++; old.score_total+=score; old.engagement_total+=engagement; old.score_medio=old.score_total/old.amostras; old.engagement_medio=old.engagement_total/old.amostras; s.aprendizado.temas[t]=old;\nr.updated_at=new Date().toISOString(); s.ciclos[base.ciclo_id]=r;\nreturn [{json:{...base,metrics:r.metrics.youtube}}];"
+      },
+      "id": "e6959e19-c628-4729-98ed-5c07ee87d092",
+      "name": "39C — SALVAR MÉTRICAS YOUTUBE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        780
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$json; return j.platform==='tiktok'?[{json:j}]:[];"
+      },
+      "id": "6b38341a-38f3-4160-bb8d-53c9ccec6161",
+      "name": "40A — FILTRAR TIKTOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        1060
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/video/query/?fields=id,create_time,share_url,video_description,like_count,comment_count,share_count,view_count,is_aigc",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{JSON.stringify({filters:{video_ids:[$json.platform_id]}})}}",
+        "options": {
+          "timeout": 60000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "e83e5c17-4c8a-4de1-9f9d-ffc855be1e95",
+      "name": "40B — TIKTOK MÉTRICAS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        760,
+        1060
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "RUPTURA_TIKTOK"
+        }
+      },
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$json;\nconst v=j.data?.videos?.[0];\nif(!v) return [];\nconst base=$('40A — FILTRAR TIKTOK').item.json;\nconst views=Number(v.view_count||0), likes=Number(v.like_count||0), comments=Number(v.comment_count||0), shares=Number(v.share_count||0);\nconst engagement=views>0?(likes+comments+shares)/views:0;\nconst s=getWorkflowStaticData('global');\ns.ciclos=s.ciclos||{};\nconst r=s.ciclos[base.ciclo_id];\nif(!r) return [];\nr.metrics=r.metrics||{};\nr.metrics.tiktok={timestamp:new Date().toISOString(),views,likes,comments,shares,engagement_rate:engagement};\ns.metricas=s.metricas||[];\ns.metricas.unshift({ciclo_id:base.ciclo_id,platform:'tiktok',tema:base.tema,views,likes,comments,shares,engagement_rate:engagement,timestamp:new Date().toISOString()});\ns.metricas=s.metricas.slice(0,200);\ns.aprendizado=s.aprendizado||{};\ns.aprendizado.temas=s.aprendizado.temas||{};\nconst t=base.tema||'sem_tema';\nconst old=s.aprendizado.temas[t]||{amostras:0,score_total:0,engagement_total:0};\nconst score=views + likes*5 + comments*10 + shares*7;\nold.amostras++;\nold.score_total+=score;\nold.engagement_total+=engagement;\nold.score_medio=old.score_total/old.amostras;\nold.engagement_medio=old.engagement_total/old.amostras;\ns.aprendizado.temas[t]=old;\nr.updated_at=new Date().toISOString();\ns.ciclos[base.ciclo_id]=r;\nreturn [{json:{...base,metrics:r.metrics.tiktok}}];"
+      },
+      "id": "fb187bdd-e2bd-419f-bd1a-a46dd7d3bb14",
+      "name": "40C — SALVAR MÉTRICAS TIKTOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        1060
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const j=$input.first().json;\nconst errors=[];\nif(j.production_mode!=='production') errors.push('production_mode não está em production');\nif(j.dry_run===true) errors.push('dry_run=true bloqueado');\nif(j.kill_switch===true) errors.push('KILL SWITCH ATIVADO');\nif(j.circuit_breaker===true) errors.push('CIRCUIT BREAKER ATIVADO');\nif(j.regras?.publicacao_opt_in!==true) errors.push('publicacao_opt_in não autorizado');\nif(j.regras?.nao_publicar_se_config_invalida!==true) errors.push('regra de proteção de configuração ausente');\nif(j.regras?.nao_repetir_publicacao!==true) errors.push('regra anti-repetição ausente');\nif(!j.preflight_aprovado) errors.push('pré-flight não aprovado');\nif(j.reconciliation_required_on_unknown!==true) errors.push('reconciliação obrigatória de estados desconhecidos ausente');\nif(errors.length) throw new Error('APEX CONTROL BLOQUEOU A PUBLICAÇÃO: '+errors.join('; '));\nconst s=getWorkflowStaticData('global'); s.apice=s.apice||{}; s.apice.ultima_autorizacao={ciclo_id:j.ciclo_id,at:new Date().toISOString(),revision:j.apice_revision||'unknown'};\nreturn [{json:{...j,apice_control_aprovado:true,apice_control_timestamp:new Date().toISOString()}}];",
+        "notesInFlow": true,
+        "notes": "Camada APEX CONTROL com kill switch, circuit breaker, opt-in e invariantes de segurança.",
+        "notesPinned": false
+      },
+      "id": "12e7efd4-04c4-4735-aee4-2bc4a2aa589d",
+      "name": "17B — APEX CONTROL / SAFETY GATE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        420
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01 — INÍCIO MANUAL": {
+      "main": [
+        [
+          {
+            "node": "03 — CONFIGURAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 — CICLO A CADA 6H": {
+      "main": [
+        [
+          {
+            "node": "03 — CONFIGURAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 — CONFIGURAÇÃO": {
+      "main": [
+        [
+          {
+            "node": "04.1 — RADAR IA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "04.2 — RADAR NEGÓCIOS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "04.3 — RADAR PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04.1 — RADAR IA": {
+      "main": [
+        [
+          {
+            "node": "05 — UNIFICAR RADAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04.2 — RADAR NEGÓCIOS": {
+      "main": [
+        [
+          {
+            "node": "05 — UNIFICAR RADAR",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "04.3 — RADAR PRODUTOS": {
+      "main": [
+        [
+          {
+            "node": "05 — UNIFICAR RADAR",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "05 — UNIFICAR RADAR": {
+      "main": [
+        [
+          {
+            "node": "06 — LIMPAR / DEDUPLICAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 — LIMPAR / DEDUPLICAR": {
+      "main": [
+        [
+          {
+            "node": "07 — BRIEFING",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 — BRIEFING": {
+      "main": [
+        [
+          {
+            "node": "08 — IA — ESTRATÉGIA + CONTEÚDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 — IA — ESTRATÉGIA + CONTEÚDO": {
+      "main": [
+        [
+          {
+            "node": "09 — QA CONTEÚDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 — QA CONTEÚDO": {
+      "main": [
+        [
+          {
+            "node": "09.1 — VERIFICAÇÃO FACTUAL INDEPENDENTE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 — VÍDEO — CREATOMATE": {
+      "main": [
+        [
+          {
+            "node": "11 — AGUARDAR VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 — AGUARDAR VÍDEO": {
+      "main": [
+        [
+          {
+            "node": "12 — STATUS CREATOMATE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 — VALIDAR VÍDEO": {
+      "main": [
+        [
+          {
+            "node": "14 — BAIXAR MP4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 — BAIXAR MP4": {
+      "main": [
+        [
+          {
+            "node": "15 — RESTAURAR DADOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 — RESTAURAR DADOS": {
+      "main": [
+        [
+          {
+            "node": "16 — HOSPEDAR MP4 PUBLICAMENTE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 — HOSPEDAR MP4 PUBLICAMENTE": {
+      "main": [
+        [
+          {
+            "node": "17 — ARTEFATO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17 — ARTEFATO FINAL": {
+      "main": [
+        [
+          {
+            "node": "17A — PRÉ-FLIGHT PRODUÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18.1 — GATE YOUTUBE": {
+      "main": [
+        [
+          {
+            "node": "19 — YT DOWNLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "19 — YT DOWNLOAD": {
+      "main": [
+        [
+          {
+            "node": "20 — YOUTUBE SHORT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18.2 — GATE TIKTOK": {
+      "main": [
+        [
+          {
+            "node": "21A — TIKTOK CREATOR INFO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "21 — TIKTOK DIRECT POST": {
+      "main": [
+        [
+          {
+            "node": "22.1 — TIKTOK AGUARDAR STATUS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18.3 — GATE INSTAGRAM": {
+      "main": [
+        [
+          {
+            "node": "23 — INSTAGRAM CRIAR REEL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "23 — INSTAGRAM CRIAR REEL": {
+      "main": [
+        [
+          {
+            "node": "24 — INSTAGRAM AGUARDAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "24 — INSTAGRAM AGUARDAR": {
+      "main": [
+        [
+          {
+            "node": "25 — INSTAGRAM STATUS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "25 — INSTAGRAM STATUS": {
+      "main": [
+        [
+          {
+            "node": "25A — INSTAGRAM PRONTO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18.4 — GATE FACEBOOK": {
+      "main": [
+        [
+          {
+            "node": "27 — FACEBOOK PAGE VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18.5 — GATE PINTEREST": {
+      "main": [
+        [
+          {
+            "node": "28 — PINTEREST REGISTRAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "28 — PINTEREST REGISTRAR": {
+      "main": [
+        [
+          {
+            "node": "29 — PINTEREST DOWNLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "31 — PINTEREST UPLOAD": {
+      "main": [
+        [
+          {
+            "node": "32 — PINTEREST CONFIRMAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "32 — PINTEREST CONFIRMAR": {
+      "main": [
+        [
+          {
+            "node": "32A — PINTEREST PRONTO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "29 — PINTEREST DOWNLOAD": {
+      "main": [
+        [
+          {
+            "node": "30 — PINTEREST PREPARAR UPLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "30 — PINTEREST PREPARAR UPLOAD": {
+      "main": [
+        [
+          {
+            "node": "31 — PINTEREST UPLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 — STATUS CREATOMATE": {
+      "main": [
+        [
+          {
+            "node": "12A — CREATOMATE PRONTO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12A — CREATOMATE PRONTO?": {
+      "main": [
+        [
+          {
+            "node": "13 — VALIDAR VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "11.1 — AGUARDAR NOVAMENTE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11.1 — AGUARDAR NOVAMENTE": {
+      "main": [
+        [
+          {
+            "node": "12.1 — STATUS CREATOMATE 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12.1 — STATUS CREATOMATE 2": {
+      "main": [
+        [
+          {
+            "node": "12B — CREATOMATE PRONTO 2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12B — CREATOMATE PRONTO 2?": {
+      "main": [
+        [
+          {
+            "node": "13 — VALIDAR VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "11.2 — AGUARDAR TERCEIRA VEZ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11.2 — AGUARDAR TERCEIRA VEZ": {
+      "main": [
+        [
+          {
+            "node": "12.2 — STATUS CREATOMATE 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12.2 — STATUS CREATOMATE 3": {
+      "main": [
+        [
+          {
+            "node": "12C — CREATOMATE PRONTO 3?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12C — CREATOMATE PRONTO 3?": {
+      "main": [
+        [
+          {
+            "node": "13 — VALIDAR VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "12D — CREATOMATE NÃO CONCLUIU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "21A — TIKTOK CREATOR INFO": {
+      "main": [
+        [
+          {
+            "node": "21B — TIKTOK ESCOLHER PRIVACIDADE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "21B — TIKTOK ESCOLHER PRIVACIDADE": {
+      "main": [
+        [
+          {
+            "node": "21 — TIKTOK DIRECT POST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17A — PRÉ-FLIGHT PRODUÇÃO": {
+      "main": [
+        [
+          {
+            "node": "17B — APEX CONTROL / SAFETY GATE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22.1 — TIKTOK AGUARDAR STATUS": {
+      "main": [
+        [
+          {
+            "node": "22.2 — TIKTOK STATUS 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22.2 — TIKTOK STATUS 2": {
+      "main": [
+        [
+          {
+            "node": "22A — TIKTOK CONCLUÍDO?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22A — TIKTOK CONCLUÍDO?": {
+      "main": [
+        [
+          {
+            "node": "35 — REGISTRO DO CICLO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "22.3 — TIKTOK AGUARDAR FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22.3 — TIKTOK AGUARDAR FINAL": {
+      "main": [
+        [
+          {
+            "node": "22.4 — TIKTOK STATUS FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22.4 — TIKTOK STATUS FINAL": {
+      "main": [
+        [
+          {
+            "node": "22B — TIKTOK FINALIZOU?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22B — TIKTOK FINALIZOU?": {
+      "main": [
+        [
+          {
+            "node": "22D — REGISTRAR RESULTADO TIKTOK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "22C — TIKTOK FALHOU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "25A — INSTAGRAM PRONTO?": {
+      "main": [
+        [
+          {
+            "node": "26 — INSTAGRAM PUBLICAR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "25B — INSTAGRAM NÃO PRONTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "32A — PINTEREST PRONTO?": {
+      "main": [
+        [
+          {
+            "node": "33 — PINTEREST CRIAR PIN",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "32B — PINTEREST NÃO PRONTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "35 — REGISTRO DO CICLO": {
+      "main": [
+        [
+          {
+            "node": "18.1 — GATE YOUTUBE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "18.2 — GATE TIKTOK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "18.3 — GATE INSTAGRAM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "18.4 — GATE FACEBOOK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "18.5 — GATE PINTEREST",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "34 — KWAI — MODO SEGURO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "36 — MEMÓRIA DO CICLO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09A — COMPLIANCE / SEGURANÇA": {
+      "main": [
+        [
+          {
+            "node": "10.1 — GERAR IMAGEM IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09.1 — VERIFICAÇÃO FACTUAL INDEPENDENTE": {
+      "main": [
+        [
+          {
+            "node": "09.2 — GATE FACT CHECK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09.2 — GATE FACT CHECK": {
+      "main": [
+        [
+          {
+            "node": "09.3 — MODERAÇÃO OPENAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.1 — GERAR IMAGEM IA": {
+      "main": [
+        [
+          {
+            "node": "10.2 — IMAGEM IA → BINÁRIO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.2 — IMAGEM IA → BINÁRIO": {
+      "main": [
+        [
+          {
+            "node": "10.3 — HOSPEDAR IMAGEM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.3 — HOSPEDAR IMAGEM": {
+      "main": [
+        [
+          {
+            "node": "10.3A — RESTAURAR DADOS IMAGEM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.4 — GERAR NARRAÇÃO IA": {
+      "main": [
+        [
+          {
+            "node": "10.5 — RESTAURAR DADOS MEDIA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.5 — RESTAURAR DADOS MEDIA": {
+      "main": [
+        [
+          {
+            "node": "10.6 — HOSPEDAR NARRAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.6 — HOSPEDAR NARRAÇÃO": {
+      "main": [
+        [
+          {
+            "node": "10.7 — PREPARAR RENDER FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.7 — PREPARAR RENDER FINAL": {
+      "main": [
+        [
+          {
+            "node": "10 — VÍDEO — CREATOMATE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10.3A — RESTAURAR DADOS IMAGEM": {
+      "main": [
+        [
+          {
+            "node": "10.4 — GERAR NARRAÇÃO IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09.3 — MODERAÇÃO OPENAI": {
+      "main": [
+        [
+          {
+            "node": "09.4 — GATE MODERAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09.4 — GATE MODERAÇÃO": {
+      "main": [
+        [
+          {
+            "node": "09.5 — ANTI-DUPLICAÇÃO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09.5 — ANTI-DUPLICAÇÃO": {
+      "main": [
+        [
+          {
+            "node": "09A — COMPLIANCE / SEGURANÇA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "20 — YOUTUBE SHORT": {
+      "main": [
+        [
+          {
+            "node": "20A — REGISTRAR RESULTADO YOUTUBE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22C — TIKTOK FALHOU": {
+      "main": [
+        [
+          {
+            "node": "22E — REGISTRAR FALHA TIKTOK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "26 — INSTAGRAM PUBLICAR": {
+      "main": [
+        [
+          {
+            "node": "26A — REGISTRAR RESULTADO INSTAGRAM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "27 — FACEBOOK PAGE VÍDEO": {
+      "main": [
+        [
+          {
+            "node": "27A — REGISTRAR RESULTADO FACEBOOK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "33 — PINTEREST CRIAR PIN": {
+      "main": [
+        [
+          {
+            "node": "33A — REGISTRAR RESULTADO PINTEREST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "37 — MÉTRICAS A CADA 6H": {
+      "main": [
+        [
+          {
+            "node": "38 — SELECIONAR MÉTRICAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "38 — SELECIONAR MÉTRICAS": {
+      "main": [
+        [
+          {
+            "node": "39A — FILTRAR YOUTUBE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "40A — FILTRAR TIKTOK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "39A — FILTRAR YOUTUBE": {
+      "main": [
+        [
+          {
+            "node": "39B — YOUTUBE MÉTRICAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "39B — YOUTUBE MÉTRICAS": {
+      "main": [
+        [
+          {
+            "node": "39C — SALVAR MÉTRICAS YOUTUBE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "40A — FILTRAR TIKTOK": {
+      "main": [
+        [
+          {
+            "node": "40B — TIKTOK MÉTRICAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "40B — TIKTOK MÉTRICAS": {
+      "main": [
+        [
+          {
+            "node": "40C — SALVAR MÉTRICAS TIKTOK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17B — APEX CONTROL / SAFETY GATE": {
+      "main": [
+        [
+          {
+            "node": "35 — REGISTRO DO CICLO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v20-real-producao-final",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "generatedFor": "n8n",
+    "productionRevision": "v20-real-producao-final",
+    "audit": "v13: QA de scores/fontes, preflight TikTok consent, estrutura preservada",
+    "reliability_revision": "v20-final-audit",
+    "v18_notes": [
+      "Preserva a arquitetura v17 e adiciona registro de resultados por plataforma.",
+      "Adiciona coleta real de métricas YouTube e TikTok via APIs oficiais.",
+      "Adiciona memória de desempenho por tema e injeta aprendizado no briefing seguinte.",
+      "Aumenta polling do Creatomate para 60s por tentativa e Instagram para 45s.",
+      "Não inventa automação de Kwai; permanece manual-safe.",
+      "Facebook/Instagram/Pinterest ficam registrados, mas analytics não são marcados como implementados onde a integração não foi auditada no workflow."
+    ],
+    "v20_notes": [
+      "Preserva a arquitetura da v19.",
+      "Adiciona dry_run=true como padrão para impedir publicação real antes do teste.",
+      "Reforça QA, normalização de hashtags/fontes e validação de artefato final.",
+      "Pré-flight passa a bloquear explicitamente publicação em dry-run.",
+      "Mantém APIs oficiais e não cria bypass de autenticação.",
+      "Métricas ficam restritas a IDs realmente publicados e com janela anti-repetição.",
+      "Fluxo permanece importável como JSON de workflow do n8n."
+    ],
+    "production_revision": "v20-apice-master-5",
+    "apex_hardening": [
+      "APEX CONTROL com kill switch e circuit breaker",
+      "Validação explícita de opt-in e invariantes de publicação",
+      "Preserva V20 production baseline e seus gates",
+      "Sem segredos no JSON"
+    ],
+    "apex_hardening_v2": "publication_ledger_per_platform",
+    "apex_hardening_v2_note": "Per-platform claim ledger blocks duplicate publication attempts after retries/re-executions; CLAIMED requires platform-state verification before manual recovery.",
+    "hardening": "publication ledger + explicit YouTube public API audit gate + unknown-state reconciliation invariant + revision consistency",
+    "apex_revision_consistency": "V4: apice_revision aligned with production_revision",
+    "hardening_v5": [
+      "remove critical continueOnFail",
+      "fix Pinterest gate unreachable ledger logic",
+      "validate TikTok privacy against creator_info options"
+    ]
+  },
+  "tags": []
+}
