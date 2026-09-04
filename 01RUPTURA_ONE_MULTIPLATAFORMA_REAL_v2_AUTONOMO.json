@@ -1,0 +1,876 @@
+{
+  "name": "RUPTURA ONE — MULTIPLATAFORMA REAL v2 — AUTÔNOMO",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ae0ee218-19b2-461e-9a1e-e6fcbfe3c19d",
+      "name": "01 — GATILHO MANUAL",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "3d359097-631d-44a7-98c3-b39a079270bf",
+      "name": "02 — AGENDADOR 6H",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now=new Date().toISOString(); return [{json:{ciclo_id:'RO-'+Date.now(),iniciado_em:now,modo:'PRODUCAO',publicacao_automatica:true,video_url:'',tema_base:'Descobrir oportunidade automaticamente',idioma:'pt-BR',plataformas:['tiktok','instagram','youtube','facebook','pinterest','kwai']}}];"
+      },
+      "id": "29a0175b-e432-47b6-8636-50da4528e09c",
+      "name": "03 — CONFIGURAÇÃO DO CICLO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        90
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json; return [{json:{...d,brief:{objetivo:'alcance + monetização legítima',publico:'público consumidor',angulo:'gancho forte + valor + prova + CTA',restricoes:['não inventar fatos','não prometer ganhos','não fazer spam','não infringir direitos autorais','respeitar políticas de cada plataforma']}}}];"
+      },
+      "id": "ddd58576-5191-4587-aaf9-6241c68e587b",
+      "name": "04 — BRIEF / OPORTUNIDADE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        90
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json; const prompt=`Crie um pacote ORIGINAL de vídeo curto em pt-BR. Retorne SOMENTE JSON válido com titulo,gancho,roteiro,legenda,cta,hashtags,ideia_visual,duracao_segundos,disclaimer. Tema: ${d.tema_base}. Objetivo: ${d.brief.objetivo}. Não invente fatos, não prometa renda, não incentive fraude e não copie terceiros.`; return [{json:{...d,ia_prompt:prompt}}];"
+      },
+      "id": "aa7eddaf-1bae-419b-9303-083de6f811c3",
+      "name": "05 — PREPARAR IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        90
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.openAiApi.apiKey}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{JSON.stringify({model:'gpt-5.4-mini',input:$json.ia_prompt,max_output_tokens:1400})}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "7da89b5f-e5c5-4c21-9bac-cb424f4181a0",
+      "name": "06 — IA — OPENAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        880,
+        90
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json; let text=d.output_text||''; if(!text&&Array.isArray(d.output)) for(const o of d.output) for(const c of (o.content||[])) if(typeof c.text==='string') text+=c.text; text=(text||'').trim().replace(/^```json\\s*/i,'').replace(/^```/,'').replace(/```$/,'').trim(); try{return [{json:{...d,...JSON.parse(text),status:'IA_OK'}}]}catch(e){return [{json:{...d,status:'ERRO_IA_JSON',erro:e.message,raw_ia:text.slice(0,4000)}}]}"
+      },
+      "id": "fab80c77-83ee-4b3d-9010-c0218a6dfc62",
+      "name": "07 — INTERPRETAR IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        90
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json,erros=[]; for(const k of ['titulo','gancho','roteiro','legenda','cta','ideia_visual']) if(typeof d[k]!=='string'||!d[k].trim()) erros.push(k); if(!Array.isArray(d.hashtags)||d.hashtags.length<2) erros.push('hashtags'); if(!Number.isInteger(d.duracao_segundos)||d.duracao_segundos<10||d.duracao_segundos>180) erros.push('duracao'); if((d.gancho||'').length<15) erros.push('gancho'); if((d.roteiro||'').length<180) erros.push('roteiro'); return [{json:{...d,qa_conteudo:!erros.length,qa_erros:erros,status:erros.length?'BLOQUEADO_QA':'QA_OK'}}];"
+      },
+      "id": "eebae183-0da6-4389-beff-e1229f8a42ab",
+      "name": "08 — QA CONTEÚDO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        90
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.qa_conteudo}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "dd57e6f1-9202-4fec-8131-a8dffaece925",
+      "name": "09 — IF QA APROVADO",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        90
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,publicacao:false,final_status:'BLOQUEADO_QA',finalizado_em:new Date().toISOString()}}];"
+      },
+      "id": "83b15c3b-c866-4f77-be96-9f8bc3dc2166",
+      "name": "10 — BLOQUEIO QA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json,erros=[]; if(!d.video_url||!/^https:\\/\\//i.test(d.video_url)) erros.push('video_url_https_publica'); return [{json:{...d,video_aprovado:!erros.length,video_erros:erros,status:erros.length?'AGUARDANDO_VIDEO':'VIDEO_OK'}}];"
+      },
+      "id": "a1bdc912-0a02-4832-b903-2c3fbc106f57",
+      "name": "11 — VALIDAR VÍDEO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.video_aprovado}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b197ff9f-d57b-4069-a335-94c49564fa08",
+      "name": "12 — IF VÍDEO PRONTO",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,publicacao:false,final_status:'AGUARDANDO_VIDEO',proximo_passo:'conectar um produtor de vídeo oficial ou fornecer video_url HTTPS público'}}];"
+      },
+      "id": "0a695088-0201-49aa-b710-0fe2bdcdd101",
+      "name": "13 — AGUARDANDO VÍDEO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,canal:'tiktok',tiktok_body:{post_info:{title:$json.legenda||$json.titulo,privacy_level:'SELF_ONLY',disable_duet:false,disable_comment:false,disable_stitch:false,is_aigc:true},source_info:{source:'PULL_FROM_URL',video_url:$json.video_url}}}}];"
+      },
+      "id": "5148d5a2-070a-4732-99ed-527f0903d3c7",
+      "name": "14 — ADAPTAR TIKTOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.apiKey}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{JSON.stringify($json.tiktok_body)}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "5ca2495a-cbaf-40e6-9d8f-b1ca919c9e41",
+      "name": "15 — TIKTOK — PUBLICAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -20
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,canal:'instagram',instagram_caption:($json.legenda||'')+'\\n\\n'+($json.hashtags||[]).join(' ')}}];"
+      },
+      "id": "92bd4e94-ebce-493c-b94c-9471efbeaa9d",
+      "name": "16 — ADAPTAR INSTAGRAM",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v23.0/{{$json.instagram_user_id}}/media",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.httpBearerAuth.token}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{JSON.stringify({media_type:'REELS',video_url:$json.video_url,caption:$json.instagram_caption})}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "b7e34a88-fb55-4c6b-9877-1b7c90d0a74c",
+      "name": "17 — INSTAGRAM — REEL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        -20
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,canal:'youtube',youtube:{title:$json.titulo,description:$json.legenda,privacyStatus:'private',tags:$json.hashtags||[],video_url:$json.video_url}}}];"
+      },
+      "id": "d3b0f12d-b84e-42b7-bf41-20b2a544ad65",
+      "name": "18 — ADAPTAR YOUTUBE",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.oAuth2Api.accessToken}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{JSON.stringify({snippet:{title:$json.youtube.title,description:$json.youtube.description,tags:$json.youtube.tags},status:{privacyStatus:$json.youtube.privacyStatus}})}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "7b0c74b2-bf8a-46dd-a7b1-b6d20b09d870",
+      "name": "19 — YOUTUBE — UPLOAD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        -20
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,canal:'facebook',facebook_caption:($json.legenda||'')+'\\n\\n'+($json.hashtags||[]).join(' ')}}];"
+      },
+      "id": "8cf1f2a8-15e7-42a5-a7d2-9c0dc04cfae6",
+      "name": "20 — ADAPTAR FACEBOOK",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v23.0/{{$json.facebook_page_id}}/videos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.httpBearerAuth.token}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{JSON.stringify({description:$json.facebook_caption,file_url:$json.video_url})}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "91e3e145-2eda-4d00-a994-380a9c5be692",
+      "name": "21 — FACEBOOK — PUBLICAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        -20
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,canal:'pinterest',pin:{title:$json.titulo,description:$json.legenda,link:$json.link||'',media_source:{source_type:'image_url',url:$json.thumbnail_url||''}}}}];"
+      },
+      "id": "a54e5f0c-1aae-4720-b80c-551dc438cb86",
+      "name": "22 — ADAPTAR PINTEREST",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3960,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pinterest.com/v5/pins",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$credentials.apiKey}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{JSON.stringify($json.pin)}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxAttempts": 3,
+          "waitBetweenAttempts": 5000
+        }
+      },
+      "id": "7086be0d-98a9-43f2-a4c9-e554d5edf07b",
+      "name": "23 — PINTEREST — PUBLICAR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        -20
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,kwai:{status:'PREPARADO',publicacao_automatica:false,motivo:'Sem API pública de publicação confirmada para esta conta; não usar automação de login/clicks.'}}}];"
+      },
+      "id": "58b0ff88-5610-4a60-8027-b2540f417a18",
+      "name": "24 — KWAI — MÓDULO SEGURO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json; const chave=`${d.ciclo_id||''}:${d.video_url||''}`; return [{json:{...d,registro:{chave,registrado_em:new Date().toISOString(),status:'PROCESSADO'}}}];"
+      },
+      "id": "2bd908dc-01c5-4ad2-9f5c-96c92b39a45a",
+      "name": "25 — REGISTRO / IDEMPOTÊNCIA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$json; return [{json:{...d,aprendizado:{tema:d.tema_base,gancho:d.gancho,duracao:d.duracao_segundos,qa:d.qa_conteudo,proxima_acao:'coletar métricas reais e ajustar gancho/CTA/duração'}}}];"
+      },
+      "id": "00c92242-3b9e-411b-a9ab-0fbc3bc62aa0",
+      "name": "26 — APRENDIZADO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4840,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{ciclo_id:$json.ciclo_id,tema:$json.tema_base,qa:$json.qa_conteudo,video:$json.video_aprovado,registro:$json.registro,kwai:$json.kwai,final_status:$json.final_status||'PROCESSADO',executado_em:new Date().toISOString()}}];"
+      },
+      "id": "4a54aac7-7c3e-4435-ad36-ace7448db69f",
+      "name": "27 — RELATÓRIO FINAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5060,
+        -20
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01 — GATILHO MANUAL": {
+      "main": [
+        [
+          {
+            "node": "03 — CONFIGURAÇÃO DO CICLO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "02 — AGENDADOR 6H": {
+      "main": [
+        [
+          {
+            "node": "03 — CONFIGURAÇÃO DO CICLO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "03 — CONFIGURAÇÃO DO CICLO": {
+      "main": [
+        [
+          {
+            "node": "04 — BRIEF / OPORTUNIDADE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "04 — BRIEF / OPORTUNIDADE": {
+      "main": [
+        [
+          {
+            "node": "05 — PREPARAR IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "05 — PREPARAR IA": {
+      "main": [
+        [
+          {
+            "node": "06 — IA — OPENAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "06 — IA — OPENAI": {
+      "main": [
+        [
+          {
+            "node": "07 — INTERPRETAR IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "07 — INTERPRETAR IA": {
+      "main": [
+        [
+          {
+            "node": "08 — QA CONTEÚDO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "08 — QA CONTEÚDO": {
+      "main": [
+        [
+          {
+            "node": "09 — IF QA APROVADO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "09 — IF QA APROVADO": {
+      "main": [
+        [
+          {
+            "node": "11 — VALIDAR VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "10 — BLOQUEIO QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 — BLOQUEIO QA": {
+      "main": [
+        [
+          {
+            "node": "27 — RELATÓRIO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "11 — VALIDAR VÍDEO": {
+      "main": [
+        [
+          {
+            "node": "12 — IF VÍDEO PRONTO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "12 — IF VÍDEO PRONTO": {
+      "main": [
+        [
+          {
+            "node": "14 — ADAPTAR TIKTOK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "13 — AGUARDANDO VÍDEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 — AGUARDANDO VÍDEO": {
+      "main": [
+        [
+          {
+            "node": "27 — RELATÓRIO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "14 — ADAPTAR TIKTOK": {
+      "main": [
+        [
+          {
+            "node": "15 — TIKTOK — PUBLICAR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "15 — TIKTOK — PUBLICAR": {
+      "main": [
+        [
+          {
+            "node": "16 — ADAPTAR INSTAGRAM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "16 — ADAPTAR INSTAGRAM": {
+      "main": [
+        [
+          {
+            "node": "17 — INSTAGRAM — REEL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "17 — INSTAGRAM — REEL": {
+      "main": [
+        [
+          {
+            "node": "18 — ADAPTAR YOUTUBE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "18 — ADAPTAR YOUTUBE": {
+      "main": [
+        [
+          {
+            "node": "19 — YOUTUBE — UPLOAD",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "19 — YOUTUBE — UPLOAD": {
+      "main": [
+        [
+          {
+            "node": "20 — ADAPTAR FACEBOOK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "20 — ADAPTAR FACEBOOK": {
+      "main": [
+        [
+          {
+            "node": "21 — FACEBOOK — PUBLICAR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "21 — FACEBOOK — PUBLICAR": {
+      "main": [
+        [
+          {
+            "node": "22 — ADAPTAR PINTEREST",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "22 — ADAPTAR PINTEREST": {
+      "main": [
+        [
+          {
+            "node": "23 — PINTEREST — PUBLICAR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "23 — PINTEREST — PUBLICAR": {
+      "main": [
+        [
+          {
+            "node": "24 — KWAI — MÓDULO SEGURO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "24 — KWAI — MÓDULO SEGURO": {
+      "main": [
+        [
+          {
+            "node": "25 — REGISTRO / IDEMPOTÊNCIA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "25 — REGISTRO / IDEMPOTÊNCIA": {
+      "main": [
+        [
+          {
+            "node": "26 — APRENDIZADO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "26 — APRENDIZADO": {
+      "main": [
+        [
+          {
+            "node": "27 — RELATÓRIO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "timezone": "America/Sao_Paulo"
+  },
+  "versionId": "",
+  "meta": {},
+  "tags": []
+}
