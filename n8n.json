@@ -1,0 +1,240 @@
+{
+  "name": "RUPTURA ONE — Command Center FINAL Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ruptura-one-v2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b1d4315d-adf2-42e1-bfba-fcf51e5af0b1",
+      "name": "01 — Portal de Comando",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "9250d806-d4e2-40f7-a379-8117abc89608"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b=$json.body??$json;\nif(!b||typeof b!=='object'||Array.isArray(b)) return [{json:{valid:false,error:'O corpo precisa ser um objeto JSON.',command:''}}];\nconst c=[b.message,b.command,b.prompt,b.text].find(v=>typeof v==='string'&&v.trim());\nif(!c) return [{json:{valid:false,error:'Envie message, command, prompt ou text.',command:''}}];\nreturn [{json:{valid:true,command:c.trim(),receivedAt:new Date().toISOString()}}];"
+      },
+      "id": "84fbc1ca-94b7-414f-b47a-af448d5aaeaf",
+      "name": "02 — Validar e Normalizar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "595788d9-6d9d-40d0-b7fe-e350952360cc",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "50d62846-a25d-4040-810f-148fdc805556",
+      "name": "03 — Comando válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.command }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Você é o núcleo de interpretação do RUPTURA ONE.\nResponda em português do Brasil.\nNunca invente que uma ação foi executada, dados, credenciais ou resultados.\nNão execute ações; apenas interprete o comando.\nPara publicação, exclusão, envio ou ação irreversível, requires_confirmation=true.\nRetorne SOMENTE JSON válido neste formato:\n{\"intent\":\"research|script|content|video|qa|publish|analytics|system|unknown\",\"action\":\"\",\"parameters\":{},\"requires_confirmation\":false,\"missing_information\":[],\"reply\":\"\"}"
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "={{ $json.command }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "fb5cc38b-f98f-4825-bc34-0b06562c45e2",
+      "name": "04 — Interpretador Gemini",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        780,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {
+          "temperature": 0.2,
+          "maxOutputTokens": 700
+        }
+      },
+      "id": "d7278c52-0e0c-472a-9f22-7b5fac2fc8f1",
+      "name": "04A — Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        780,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw=String($json.text??$json.response??'').trim();\nconst clean=raw.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/\\s*```$/i,'').trim();\ntry{return [{json:{ok:true,...JSON.parse(clean),raw_model_output:raw}}]}\ncatch(e){return [{json:{ok:false,intent:'unknown',action:'',parameters:{},requires_confirmation:false,missing_information:[],reply:raw||'A IA não retornou resposta.',parse_error:true,error:'A resposta da IA não veio em JSON válido.',raw_model_output:raw}}]}"
+      },
+      "id": "205e7838-9976-4d21-ad67-3c7b7b6b0d28",
+      "name": "05 — Validar Resposta da IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, data: $json } }}",
+        "options": {}
+      },
+      "id": "8d7efa0f-9736-44ed-a245-5aa96dd9c751",
+      "name": "06 — Resposta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1300,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: $json.error, command: $json.command } }}",
+        "options": {}
+      },
+      "id": "04980aa0-d8d3-4800-80f9-cba7834e231a",
+      "name": "07 — Resposta inválida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        780,
+        320
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "01 — Portal de Comando": {
+      "main": [
+        [
+          {
+            "node": "02 — Validar e Normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 — Validar e Normalizar": {
+      "main": [
+        [
+          {
+            "node": "03 — Comando válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 — Comando válido?": {
+      "main": [
+        [
+          {
+            "node": "04 — Interpretador Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07 — Resposta inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 — Interpretador Gemini": {
+      "main": [
+        [
+          {
+            "node": "05 — Validar Resposta da IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04A — Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "04 — Interpretador Gemini",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 — Validar Resposta da IA": {
+      "main": [
+        [
+          {
+            "node": "06 — Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "65c48d7b-f88b-4ae9-8c17-9c11df9f4285",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
