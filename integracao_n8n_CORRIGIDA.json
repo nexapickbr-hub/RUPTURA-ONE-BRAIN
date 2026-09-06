@@ -1,0 +1,198 @@
+{
+  "name": "RUPTURA ONE — Command Center v1 — Corrigido",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ruptura-one-command",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7640a6be-6062-49d7-855f-a8560d80d42b",
+      "name": "01 — Portal de Comando",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        0
+      ],
+      "webhookId": "7640a6be-6062-49d7-855f-a8560d80d42b"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? $json;\nconst raw = body.message ?? body.command ?? body.prompt ?? body.text ?? '';\n\nif (typeof raw !== 'string' || !raw.trim()) {\n  return [{json:{\n    ok:false,\n    error:'COMMAND_REQUIRED',\n    message:'Envie um comando no campo message, command, prompt ou text.'\n  }}];\n}\n\nreturn [{json:{\n  ok:true,\n  request_id: body.request_id ?? `rup-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,\n  command: raw.trim(),\n  source: body.source ?? 'webhook',\n  received_at: new Date().toISOString()\n}}];"
+      },
+      "id": "1ab9092e-0e63-4c3b-b41e-29e743493773",
+      "name": "02 — Validar e Normalizar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -650,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "49924bac-311b-45c9-b425-f308b78ee443",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "876431c4-ce6f-4036-ac65-74af619e1595",
+      "name": "03 — Comando válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "system",
+              "content": "Você é o núcleo de interpretação do RUPTURA ONE.\nTransforme o comando recebido em uma intenção operacional clara.\n\nResponda em português do Brasil.\nNão invente que uma ação foi executada.\nNão invente dados, credenciais, resultados ou integrações.\nSe faltar informação, informe o que falta.\nPara publicação, exclusão, envio ou qualquer ação irreversível, indique que é necessária confirmação.\nClassifique a intenção quando possível em: research, script, content, video, qa, publish, analytics, system ou unknown.\n\nRetorne somente um JSON válido neste formato:\n{\n  \"intent\": \"research|script|content|video|qa|publish|analytics|system|unknown\",\n  \"action\": \"descrição curta da ação\",\n  \"parameters\": {},\n  \"requires_confirmation\": false,\n  \"missing_information\": [],\n  \"reply\": \"resposta curta ao usuário\"\n}"
+            },
+            {
+              "type": "text",
+              "role": "user",
+              "content": "={{ $json.command }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": {
+          "maxTokens": 700
+        }
+      },
+      "id": "905f2f6f-dca8-4658-9dfd-b709957ce01a",
+      "name": "04 — Interpretador OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.2,
+      "position": [
+        -120,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, request_id: $('02 — Validar e Normalizar').item.json.request_id, status: 'interpreted', result: $json } }}",
+        "options": {}
+      },
+      "id": "ff910194-303d-4cc7-9bd4-2270865c0c35",
+      "name": "05 — Resposta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        180,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, request_id: $('02 — Validar e Normalizar').item.json.request_id || null, status: 'rejected', error: $('02 — Validar e Normalizar').item.json.error, message: $('02 — Validar e Normalizar').item.json.message } }}",
+        "options": {}
+      },
+      "id": "6e108393-d283-4cee-8af6-74c4cd2afa52",
+      "name": "06 — Resposta de comando inválido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -120,
+        180
+      ]
+    }
+  ],
+  "connections": {
+    "01 — Portal de Comando": {
+      "main": [
+        [
+          {
+            "node": "02 — Validar e Normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 — Validar e Normalizar": {
+      "main": [
+        [
+          {
+            "node": "03 — Comando válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 — Comando válido?": {
+      "main": [
+        [
+          {
+            "node": "04 — Interpretador OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "06 — Resposta de comando inválido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 — Interpretador OpenAI": {
+      "main": [
+        [
+          {
+            "node": "05 — Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ff3363f6-d651-487d-82f0-dca932ccbde6",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
